@@ -77,7 +77,7 @@ export function updateEditorImageUI(container, image) {
     status.setAttribute('role', 'status');
   }
 
-  workspace.querySelectorAll('[data-viewport-action], [data-transform-action], [data-viewport-zoom], [data-crop-action]').forEach((control) => {
+  workspace.querySelectorAll('[data-viewport-action], [data-transform-action], [data-viewport-zoom], [data-crop-action], [data-crop-ratio], [data-crop-width], [data-crop-height]').forEach((control) => {
     control.disabled = !image;
   });
 
@@ -414,18 +414,82 @@ function createViewportControls(hasImage = false) {
   cropToolbar.className = 'viewport-toolbar crop-toolbar';
   cropToolbar.setAttribute('role', 'group');
   cropToolbar.setAttribute('aria-label', 'Crop controls');
-  for (const [action, label, ariaLabel, icon] of [
-    ['begin', 'Crop', 'Crop', null],
-    ['apply', '✓ Apply', 'Apply crop', ['M4 10.5 8.2 14.5 16 5.5']],
-    ['cancel', 'Cancel', 'Cancel crop', null],
-    ['reset', 'Reset', 'Reset crop', null],
+  const cropBegin = createButton({ label: 'Crop', variant: 'secondary', className: 'crop-action-button', disabled: !hasImage });
+  cropBegin.setAttribute('aria-label', 'Crop');
+  cropBegin.title = 'Crop image';
+  cropBegin.dataset.cropAction = 'begin';
+  cropToolbar.append(cropBegin);
+
+  const cropSettings = document.createElement('div');
+  cropSettings.className = 'crop-settings';
+  cropSettings.hidden = true;
+  const ratioLabel = document.createElement('label');
+  ratioLabel.className = 'crop-ratio-control';
+  ratioLabel.append(document.createTextNode('Ratio '));
+  const ratioSelect = document.createElement('select');
+  ratioSelect.className = 'crop-ratio-select';
+  ratioSelect.dataset.cropRatio = 'true';
+  ratioSelect.setAttribute('aria-label', 'Crop aspect ratio');
+  ratioSelect.title = 'Choose crop aspect ratio';
+  ratioSelect.disabled = !hasImage;
+  for (const [value, label] of [
+    ['freeform', 'Freeform'], ['original', 'Original'], ['1:1', '1:1'], ['4:3', '4:3'],
+    ['16:9', '16:9'], ['3:2', '3:2'], ['9:16', '9:16'],
   ]) {
-    const button = createButton({ label, variant: action === 'apply' ? 'primary' : 'secondary', className: 'crop-action-button', disabled: !hasImage });
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = label;
+    ratioSelect.append(option);
+  }
+  ratioLabel.append(ratioSelect);
+  cropSettings.append(ratioLabel);
+
+  const dimensions = document.createElement('div');
+  dimensions.className = 'crop-pixel-dimensions';
+  dimensions.dataset.cropDimensions = 'true';
+  dimensions.setAttribute('role', 'group');
+  dimensions.setAttribute('aria-label', 'Crop pixel dimensions');
+  for (const [dimension, labelText] of [['width', 'W'], ['height', 'H']]) {
+    if (dimension === 'height') {
+      const multiply = document.createElement('span');
+      multiply.className = 'crop-dimensions-multiply';
+      multiply.setAttribute('aria-hidden', 'true');
+      multiply.textContent = '×';
+      dimensions.append(multiply);
+    }
+    const field = document.createElement('label');
+    field.className = 'crop-pixel-field';
+    const label = document.createElement('span');
+    label.textContent = labelText;
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.min = '20';
+    input.step = '1';
+    input.inputMode = 'numeric';
+    input.disabled = !hasImage;
+    input.dataset[`crop${dimension[0].toUpperCase()}${dimension.slice(1)}`] = 'true';
+    input.setAttribute('aria-label', `Crop ${dimension} in pixels`);
+    field.append(label, input);
+    dimensions.append(field);
+  }
+  const pixelSuffix = document.createElement('span');
+  pixelSuffix.className = 'crop-pixel-suffix';
+  pixelSuffix.textContent = 'px';
+  dimensions.append(pixelSuffix);
+  cropSettings.append(dimensions);
+  cropToolbar.append(cropSettings);
+
+  for (const [action, label, ariaLabel, variant, icon] of [
+    ['apply', 'Apply', 'Apply crop', 'primary', ['M4 10.5 8.2 14.5 16 5.5']],
+    ['cancel', 'Cancel', 'Cancel crop', 'secondary', null],
+    ['reset', 'Reset', 'Reset crop', 'secondary', null],
+  ]) {
+    const button = createButton({ label, variant, className: `crop-action-button crop-action-${action}`, disabled: !hasImage });
     button.setAttribute('aria-label', ariaLabel);
     button.title = ariaLabel;
     if (icon) { button.replaceChildren(createSvgIcon(icon)); button.append(document.createTextNode(' Apply')); }
     button.dataset.cropAction = action;
-    button.hidden = action === 'apply' || action === 'cancel';
+    button.hidden = action !== 'reset';
     cropToolbar.append(button);
   }
   controls.append(cropToolbar);
@@ -453,7 +517,7 @@ function createSvgIcon(paths) {
   return svg;
 }
 
-export function updateEditorCropUI(container, { hasImage, cropMode, hasCrop }) {
+export function updateEditorCropUI(container, { hasImage, cropMode, hasCrop, draftCrop, cropBounds, ratioPreset = 'freeform', forceDimensions = false }) {
   const controls = container.querySelectorAll('[data-crop-action]');
   controls.forEach((button) => {
     const action = button.dataset.cropAction;
@@ -461,6 +525,17 @@ export function updateEditorCropUI(container, { hasImage, cropMode, hasCrop }) {
     button.hidden = (action === 'begin' && cropMode) || ((action === 'apply' || action === 'cancel') && !cropMode);
     if (action === 'reset') button.disabled = !hasImage || (!hasCrop && !cropMode);
   });
+  const settings = container.querySelector('.crop-settings');
+  const ratio = container.querySelector('[data-crop-ratio]');
+  if (settings) settings.hidden = !cropMode;
+  if (ratio) { ratio.disabled = !hasImage || !cropMode; ratio.value = ratioPreset; }
+  for (const [dimension, dataKey] of [['width', 'cropWidth'], ['height', 'cropHeight']]) {
+    const input = container.querySelector(`[data-${dataKey.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}]`);
+    if (!input) continue;
+    input.disabled = !hasImage || !cropMode;
+    if (cropBounds) input.max = String(Math.floor(cropBounds[dimension]));
+    if (draftCrop && (forceDimensions || document.activeElement !== input)) input.value = String(Math.max(1, Math.round(draftCrop[dimension])));
+  }
   container.querySelectorAll('[data-transform-action], [data-viewport-action], [data-viewport-zoom]').forEach((control) => {
     control.disabled = !hasImage || cropMode;
   });

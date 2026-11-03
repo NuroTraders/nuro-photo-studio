@@ -410,6 +410,14 @@ button.quick-action-card:hover { transform: translateY(-2px); border-color: var(
 .transform-icon-button svg, .crop-action-button svg { display: block; width: 20px; height: 20px; }
 .crop-toolbar { width: fit-content; max-width: 100%; gap: 5px; padding: 5px; border: 1px solid var(--color-border); border-radius: var(--radius-pill); background: var(--color-surface-raised); box-shadow: var(--shadow-card); }
 .crop-toolbar [hidden] { display: none; }
+.crop-settings { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; padding: 0 5px; }
+.crop-ratio-control { display: inline-flex; align-items: center; gap: 6px; color: var(--color-text-muted); font-size: var(--text-xs); font-weight: 650; }
+.crop-ratio-select { min-height: 34px; max-width: 132px; padding: 6px 25px 6px 9px; border: 1px solid var(--color-border-strong); border-radius: var(--radius-pill); color: var(--color-text); background: var(--color-surface-inset); font: inherit; font-weight: 600; }
+.crop-pixel-dimensions { display: inline-flex; align-items: center; gap: 5px; color: var(--color-text-muted); font-size: var(--text-xs); }
+.crop-pixel-field { display: inline-flex; align-items: center; gap: 4px; font-weight: 650; }
+.crop-pixel-field input { width: 72px; min-height: 32px; padding: 5px 7px; border: 1px solid var(--color-border-strong); border-radius: 9px; color: var(--color-text); background: var(--color-surface-inset); font: 600 var(--text-xs)/1.2 var(--font-body); font-variant-numeric: tabular-nums; }
+.crop-pixel-dimensions input:focus-visible, .crop-ratio-select:focus-visible { outline-offset: 1px; }
+.crop-dimensions-multiply, .crop-pixel-suffix { color: var(--color-text-subtle); }
 .crop-action-button { min-height: 34px; padding: 7px 12px; border-radius: var(--radius-pill); }
 .crop-action-button svg { width: 17px; height: 17px; }
 .viewport-step-button { width: 42px; min-width: 42px; padding: 8px; font-size: var(--text-md); }

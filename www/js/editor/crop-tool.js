@@ -29,7 +29,7 @@ export function moveCropRect(rect, deltaX, deltaY, bounds) {
 }
 
 /** Create a clamped crop rectangle from two visual-space drag points. */
-export function createCropFromPoints(start, current, bounds, minimum = MIN_CROP_SIZE) {
+export function createCropFromPoints(start, current, bounds, minimum = MIN_CROP_SIZE, aspectRatio = null) {
   const x1 = clamp(start.x, 0, bounds.width), y1 = clamp(start.y, 0, bounds.height);
   const x2 = clamp(current.x, 0, bounds.width), y2 = clamp(current.y, 0, bounds.height);
   let left = Math.min(x1, x2), right = Math.max(x1, x2);
@@ -47,12 +47,35 @@ export function createCropFromPoints(start, current, bounds, minimum = MIN_CROP_
     if (top < 0) { bottom -= top; top = 0; }
     if (bottom > bounds.height) { top -= bottom - bounds.height; bottom = bounds.height; }
   }
+  if (isAspectRatio(aspectRatio)) {
+    let width = right - left, height = bottom - top;
+    let dirX = x2 < x1 ? -1 : 1;
+    let dirY = y2 < y1 ? -1 : 1;
+    const minRatioHeight = Math.max(Math.min(minimum, bounds.height), Math.min(minimum, bounds.width) / aspectRatio);
+    const requiredWidth = minRatioHeight * aspectRatio;
+    const requiredHeight = minRatioHeight;
+    if ((dirX < 0 ? x1 : bounds.width - x1) < requiredWidth && (dirX > 0 ? x1 : bounds.width - x1) >= requiredWidth) dirX *= -1;
+    if ((dirY < 0 ? y1 : bounds.height - y1) < requiredHeight && (dirY > 0 ? y1 : bounds.height - y1) >= requiredHeight) dirY *= -1;
+    const availableWidth = dirX < 0 ? x1 : bounds.width - x1;
+    const availableHeight = dirY < 0 ? y1 : bounds.height - y1;
+    const ratioHeight = Math.max(height, width / aspectRatio, minRatioHeight);
+    width = ratioHeight * aspectRatio;
+    height = ratioHeight;
+    const scale = Math.min(1, availableWidth / width, availableHeight / height);
+    width *= scale;
+    height *= scale;
+    left = dirX < 0 ? x1 - width : x1;
+    top = dirY < 0 ? y1 - height : y1;
+    right = left + width;
+    bottom = top + height;
+  }
   return { x: left, y: top, width: right - left, height: bottom - top };
 }
 
 /** Resize a rectangle from one of n, ne, e, se, s, sw, w, nw handles. */
-export function resizeCropRect(rect, handle, deltaX, deltaY, bounds, minimum = MIN_CROP_SIZE) {
+export function resizeCropRect(rect, handle, deltaX, deltaY, bounds, minimum = MIN_CROP_SIZE, aspectRatio = null) {
   const safe = clampCropRect(rect, bounds, minimum);
+  if (isAspectRatio(aspectRatio)) return resizeCropWithAspect(safe, handle, deltaX, deltaY, bounds, minimum, aspectRatio);
   let left = safe.x;
   let right = safe.x + safe.width;
   let top = safe.y;
@@ -65,7 +88,69 @@ export function resizeCropRect(rect, handle, deltaX, deltaY, bounds, minimum = M
   if (handle.includes('n')) top = clamp(top + deltaY, 0, bottom - minHeight);
   if (handle.includes('s')) bottom = clamp(bottom + deltaY, top + minHeight, bounds.height);
 
-  return { x: left, y: top, width: right - left, height: bottom - top };
+  const resized = { x: left, y: top, width: right - left, height: bottom - top };
+  return isAspectRatio(aspectRatio) ? conformCropRectToAspect(resized, bounds, aspectRatio, minimum) : resized;
+}
+
+function resizeCropWithAspect(rect, handle, deltaX, deltaY, bounds, minimum, aspectRatio) {
+  const oppositeX = handle.includes('w') ? rect.x + rect.width : handle.includes('e') ? rect.x : rect.x + rect.width / 2;
+  const oppositeY = handle.includes('n') ? rect.y + rect.height : handle.includes('s') ? rect.y : rect.y + rect.height / 2;
+  const draggedWidth = handle.includes('w') ? oppositeX - (rect.x + deltaX)
+    : handle.includes('e') ? rect.x + rect.width + deltaX - oppositeX : rect.width;
+  const draggedHeight = handle.includes('n') ? oppositeY - (rect.y + deltaY)
+    : handle.includes('s') ? rect.y + rect.height + deltaY - oppositeY : rect.height;
+  const widthScaleChange = Math.abs(draggedWidth / rect.width - 1);
+  const heightScaleChange = Math.abs(draggedHeight / rect.height - 1);
+  let height = handle.includes('n') || handle.includes('s')
+    ? draggedHeight
+    : handle.includes('e') || handle.includes('w')
+      ? draggedWidth / aspectRatio
+      : widthScaleChange >= heightScaleChange ? draggedWidth / aspectRatio : draggedHeight;
+  const maxHeight = Math.min(bounds.height, bounds.width / aspectRatio);
+  const minHeight = Math.max(Math.min(minimum, bounds.height), Math.min(minimum, bounds.width) / aspectRatio);
+  height = clamp(height, Math.min(minHeight, maxHeight), maxHeight);
+  const width = height * aspectRatio;
+  const left = handle.includes('w') ? oppositeX - width : handle.includes('e') ? oppositeX : oppositeX - width / 2;
+  const top = handle.includes('n') ? oppositeY - height : handle.includes('s') ? oppositeY : oppositeY - height / 2;
+  return clampCropRect({ x: left, y: top, width, height }, bounds, 0.000001);
+}
+
+/** Fit an existing crop to a fixed ratio while keeping its center as stable as bounds allow. */
+export function conformCropRectToAspect(rect, bounds, aspectRatio, minimum = MIN_CROP_SIZE) {
+  const safe = clampCropRect(rect, bounds, minimum);
+  if (!isAspectRatio(aspectRatio)) return safe;
+  const maxHeight = Math.min(bounds.height, bounds.width / aspectRatio);
+  const minHeight = Math.max(Math.min(minimum, bounds.height), Math.min(minimum, bounds.width) / aspectRatio);
+  if (maxHeight <= 0) return safe;
+  const height = clamp(Math.min(safe.height, safe.width / aspectRatio), Math.min(minHeight, maxHeight), maxHeight);
+  const width = height * aspectRatio;
+  const centerX = safe.x + safe.width / 2;
+  const centerY = safe.y + safe.height / 2;
+  return clampCropRect({ x: centerX - width / 2, y: centerY - height / 2, width, height }, bounds, 0.000001);
+}
+
+/** Update displayed pixel dimensions; in locked mode the changed field drives the other dimension. */
+export function resizeCropToDimensions(rect, requestedWidth, requestedHeight, changedDimension, bounds, aspectRatio = null, minimum = MIN_CROP_SIZE) {
+  let width = finite(requestedWidth, rect.width);
+  let height = finite(requestedHeight, rect.height);
+  if (isAspectRatio(aspectRatio)) {
+    if (changedDimension === 'width') height = width / aspectRatio;
+    else width = height * aspectRatio;
+    const maxHeight = Math.min(bounds.height, bounds.width / aspectRatio);
+    const minHeight = Math.min(Math.max(Math.min(minimum, bounds.height), Math.min(minimum, bounds.width) / aspectRatio), maxHeight);
+    height = clamp(height, minHeight, maxHeight);
+    width = height * aspectRatio;
+  } else {
+    width = clamp(width, Math.min(minimum, bounds.width), bounds.width);
+    height = clamp(height, Math.min(minimum, bounds.height), bounds.height);
+  }
+  const centerX = rect.x + rect.width / 2;
+  const centerY = rect.y + rect.height / 2;
+  return clampCropRect(
+    { x: centerX - width / 2, y: centerY - height / 2, width, height },
+    bounds,
+    isAspectRatio(aspectRatio) ? 0.000001 : Math.min(minimum, bounds.width, bounds.height),
+  );
 }
 
 export function mapCropRectToVisual(sourceRect, sourceWidth, sourceHeight, transform) {
@@ -130,4 +215,8 @@ function finite(value, fallback) {
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+function isAspectRatio(value) {
+  return Number.isFinite(value) && value > 0;
 }

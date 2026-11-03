@@ -326,3 +326,19 @@ test('crop mode lets a drag draw a new box from a full-image selection', () => {
   assert.deepEqual(viewport.getState().crop, { x: 50, y: 50, width: 100, height: 75 });
   viewport.destroy();
 });
+
+test('viewport ratio presets conform the draft, pixel changes stay proportional, and replacement resets ratio', () => {
+  const { viewport } = setup();
+  viewport.setImage({ naturalWidth: 300, naturalHeight: 200 });
+  viewport.setCropAspectRatio(1);
+  viewport.beginCrop();
+  assert.deepEqual(viewport.getState().draftCrop, { x: 50, y: 0, width: 200, height: 200 });
+  assert.deepEqual(viewport.setCropDimensions(120, 200, 'width'), { x: 90, y: 40, width: 120, height: 120 });
+  viewport.setCropAspectRatio(16 / 9);
+  const ratioCrop = viewport.getState().draftCrop;
+  assert.ok(Math.abs(ratioCrop.width / ratioCrop.height - 16 / 9) < 1e-8);
+  viewport.applyCrop();
+  viewport.setImage({ naturalWidth: 100, naturalHeight: 80 });
+  assert.equal(viewport.getState().cropAspectRatio, null);
+  viewport.destroy();
+});

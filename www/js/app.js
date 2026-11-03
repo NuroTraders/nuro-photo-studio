@@ -25,6 +25,7 @@ let editorViewport = null;
 let activeTransform = { ...DEFAULT_TRANSFORM };
 let activeCrop = null;
 let cropMode = false;
+let activeCropRatio = 'freeform';
 
 renderDashboard(dashboard);
 
@@ -56,6 +57,8 @@ for (const item of navigationItems) {
 function navigateTo(screenId) {
   const item = navigationItems.find((entry) => entry.id === screenId);
   if (!item) return;
+  if (cropMode) editorViewport?.cancelCrop();
+  cropMode = false;
   destroyEditorViewport();
   navigation.querySelectorAll('[data-view]').forEach((entry) => {
     const active = entry.dataset.view === item.id;
@@ -88,10 +91,30 @@ dashboard.addEventListener('click', (event) => {
 dashboard.addEventListener('input', (event) => {
   if (event.target.matches('[data-viewport-zoom]')) {
     editorViewport?.setZoom(Number(event.target.value) / 100);
+  } else if (event.target.matches('[data-crop-width], [data-crop-height]')) {
+    const value = Number(event.target.value);
+    if (!Number.isFinite(value) || value <= 0 || !editorViewport) return;
+    const state = editorViewport.getState();
+    editorViewport.setCropDimensions(
+      event.target.matches('[data-crop-width]') ? value : state.draftCrop?.width,
+      event.target.matches('[data-crop-height]') ? value : state.draftCrop?.height,
+      event.target.matches('[data-crop-width]') ? 'width' : 'height',
+    );
+    updateCropUI();
   }
 });
 
 dashboard.addEventListener('change', (event) => {
+  if (event.target.matches('[data-crop-ratio]')) {
+    activeCropRatio = event.target.value;
+    editorViewport?.setCropAspectRatio(resolveCropAspectRatio());
+    updateCropUI();
+    return;
+  }
+  if (event.target.matches('[data-crop-width], [data-crop-height]')) {
+    updateCropUI(true);
+    return;
+  }
   const input = event.target.closest('[data-image-file-input]');
   if (!input) return;
   const files = [...(input.files || [])];
@@ -143,12 +166,15 @@ async function importImage(file) {
     activeTransform = { ...DEFAULT_TRANSFORM };
     activeCrop = null;
     cropMode = false;
+    activeCropRatio = 'freeform';
     appState.setActiveDocument(loadedImage.document);
     if (activeScreen !== 'editor') navigateTo('editor');
     else if (editorViewport) {
       editorViewport.setImage(loadedImage.image);
       editorViewport.setTransform(activeTransform);
+      editorViewport.setCropAspectRatio(null);
       updateEditorImageUI(dashboard, loadedImage);
+      updateCropUI();
     } else renderEditorScreen();
     releaseLoadedImage(previousImage);
   } catch (error) {
@@ -175,10 +201,12 @@ function closeCurrentImage() {
   activeTransform = { ...DEFAULT_TRANSFORM };
   activeCrop = null;
   cropMode = false;
+  activeCropRatio = 'freeform';
   releaseLoadedImage(activeImage);
   activeImage = null;
   appState.setActiveDocument(null);
   if (!updateEditorImageUI(dashboard, null)) renderEditorScreen();
+  else updateCropUI();
   dashboard.querySelector('[data-open-image]')?.focus();
 }
 
@@ -196,10 +224,12 @@ function renderEditorScreen() {
     onRotate: runTransformAction,
     onCropApply: (crop) => { activeCrop = crop; cropMode = false; updateCropUI(); },
     onCropCancel: () => { cropMode = false; updateCropUI(); },
+    onCropChange: () => updateCropUI(),
   });
   editorViewport.setImage(activeImage?.image ?? null);
   editorViewport.setTransform(activeTransform);
   if (activeCrop) editorViewport.setCrop(activeCrop);
+  editorViewport.setCropAspectRatio(resolveCropAspectRatio());
   updateCropUI();
 }
 
@@ -224,21 +254,41 @@ function runTransformAction(action) {
   else if (action === 'flip-vertical') activeTransform = toggleFlipVertical(activeTransform);
   else return;
   editorViewport.setTransform(activeTransform);
+  editorViewport.setCropAspectRatio(resolveCropAspectRatio());
 }
 
 function runCropAction(action) {
   if (!activeImage || !editorViewport) return;
-  if (action === 'begin') cropMode = editorViewport.beginCrop();
+  if (action === 'begin') {
+    editorViewport.setCropAspectRatio(resolveCropAspectRatio());
+    cropMode = editorViewport.beginCrop();
+  }
   else if (action === 'apply') { activeCrop = editorViewport.applyCrop(); cropMode = false; }
   else if (action === 'cancel') { editorViewport.cancelCrop(); cropMode = false; }
-  else if (action === 'reset') { editorViewport.resetCrop(); activeCrop = null; cropMode = false; }
+  else if (action === 'reset') { editorViewport.resetCrop(); activeCrop = null; activeCropRatio = 'freeform'; cropMode = false; }
   updateCropUI();
 }
 
-function updateCropUI() {
-  if (activeScreen === 'editor') updateEditorCropUI(dashboard, {
+function updateCropUI(forceDimensions = false) {
+  if (activeScreen !== 'editor') return;
+  const state = editorViewport?.getState();
+  updateEditorCropUI(dashboard, {
     hasImage: Boolean(activeImage), cropMode, hasCrop: Boolean(activeCrop),
+    draftCrop: state?.draftCrop, cropBounds: state?.cropBounds, ratioPreset: activeCropRatio, forceDimensions,
   });
+}
+
+function resolveCropAspectRatio() {
+  if (activeCropRatio === 'freeform') return null;
+  if (activeCropRatio === 'original') {
+    if (!activeImage) return null;
+    const rotated = activeTransform.rotation === 90 || activeTransform.rotation === 270;
+    return rotated
+      ? activeImage.image.naturalHeight / activeImage.image.naturalWidth
+      : activeImage.image.naturalWidth / activeImage.image.naturalHeight;
+  }
+  const [width, height] = activeCropRatio.split(':').map(Number);
+  return width > 0 && height > 0 ? width / height : null;
 }
 
 function updateZoomControls({ percent }) {
@@ -255,6 +305,9 @@ window.addEventListener('pagehide', (event) => {
   releaseLoadedImage(activeImage);
   activeImage = null;
   activeTransform = { ...DEFAULT_TRANSFORM };
+  activeCrop = null;
+  activeCropRatio = 'freeform';
+  cropMode = false;
 });
 
 menuToggle.addEventListener('click', () => {

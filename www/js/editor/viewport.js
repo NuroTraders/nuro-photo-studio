@@ -1,7 +1,7 @@
 import { DEFAULT_TRANSFORM, getTransformedDimensions, normalizeTransform } from './transform-tool.js';
 import {
   clampCropRect, createFullCrop, mapCropRectToSource, mapCropRectToVisual,
-  createCropFromPoints, moveCropRect, resizeCropRect,
+  conformCropRectToAspect, createCropFromPoints, moveCropRect, resizeCropRect, resizeCropToDimensions,
 } from './crop-tool.js';
 
 const MIN_ZOOM = 0.01;
@@ -14,7 +14,7 @@ const CROP_HANDLE_SIZE = 12;
 /** Draws a decoded source image into a viewport-sized canvas; it never writes to the source. */
 export function createCanvasViewport(canvas, {
   emptyState = null, onZoomChange = () => {}, onRotate = () => {},
-  onCropApply = () => {}, onCropCancel = () => {},
+  onCropApply = () => {}, onCropCancel = () => {}, onCropChange = () => {},
 } = {}) {
   const host = canvas.parentElement;
   const context = canvas.getContext('2d', { alpha: true, desynchronized: true });
@@ -30,6 +30,7 @@ export function createCanvasViewport(canvas, {
   let cropViewState = null;
   let cropDrag = null;
   let selectedCropHandle = 'se';
+  let cropAspectRatio = null;
   let zoom = 1;
   let panX = 0;
   let panY = 0;
@@ -66,6 +67,8 @@ export function createCanvasViewport(canvas, {
       draftCrop = null;
       cropViewState = null;
       cropDrag = null;
+      cropAspectRatio = null;
+      clearCropCursorClasses();
       canvas.classList.remove('is-crop-mode');
       canvas.hidden = !image;
       if (emptyState) emptyState.hidden = Boolean(image);
@@ -93,6 +96,23 @@ export function createCanvasViewport(canvas, {
       crop = image && nextCrop ? clampCropRect(nextCrop, sourceBounds()) : null;
       fitToScreen();
     },
+    setCropAspectRatio(ratio) {
+      cropAspectRatio = Number.isFinite(ratio) && ratio > 0 ? ratio : null;
+      if (cropMode && draftCrop) {
+        const bounds = getTransformedDimensions(image.naturalWidth, image.naturalHeight, transform);
+        if (cropAspectRatio) draftCrop = conformCropRectToAspect(draftCrop, bounds, cropAspectRatio);
+        notifyCropChange();
+        scheduleRender();
+      }
+    },
+    setCropDimensions(requestedWidth, requestedHeight, changedDimension) {
+      if (!cropMode || !draftCrop) return null;
+      const bounds = getTransformedDimensions(image.naturalWidth, image.naturalHeight, transform);
+      draftCrop = resizeCropToDimensions(draftCrop, requestedWidth, requestedHeight, changedDimension, bounds, cropAspectRatio);
+      notifyCropChange();
+      scheduleRender();
+      return { ...draftCrop };
+    },
     setTransform(nextTransform) {
       transform = normalizeTransform(nextTransform);
       panX = 0;
@@ -112,6 +132,8 @@ export function createCanvasViewport(canvas, {
         crop: crop ? { ...crop } : null,
         cropMode,
         draftCrop: draftCrop ? { ...draftCrop } : null,
+        cropAspectRatio,
+        cropBounds: image ? getTransformedDimensions(image.naturalWidth, image.naturalHeight, transform) : null,
       };
     },
     destroy() {
@@ -125,6 +147,7 @@ export function createCanvasViewport(canvas, {
       cropMode = false;
       draftCrop = null;
       cropDrag = null;
+      cropAspectRatio = null;
       canvas.classList.remove('is-crop-mode');
       cancelGesture();
       canvas.classList.remove('is-panning');
@@ -198,6 +221,7 @@ export function createCanvasViewport(canvas, {
       ? mapCropRectToVisual(crop, image.naturalWidth, image.naturalHeight, transform)
       : createFullCrop(bounds.width, bounds.height);
     draftCrop = clampCropRect(draftCrop, bounds);
+    if (cropAspectRatio) draftCrop = conformCropRectToAspect(draftCrop, bounds, cropAspectRatio);
     selectedCropHandle = 'se';
     fitMode = true;
     zoom = fitZoom();
@@ -218,6 +242,7 @@ export function createCanvasViewport(canvas, {
     draftCrop = null;
     cropViewState = null;
     cropDrag = null;
+    clearCropCursorClasses();
     canvas.classList.remove('is-crop-mode');
     updateCanvasAriaLabel();
     fitMode = true;
@@ -238,6 +263,7 @@ export function createCanvasViewport(canvas, {
     draftCrop = null;
     cropViewState = null;
     cropDrag = null;
+    clearCropCursorClasses();
     canvas.classList.remove('is-crop-mode');
     updateCanvasAriaLabel();
     if (restore) ({ zoom, panX, panY, fitMode } = restore);
@@ -257,6 +283,7 @@ export function createCanvasViewport(canvas, {
     if (!image) return;
     if (cropMode) cancelCrop();
     crop = null;
+    cropAspectRatio = null;
     fitToScreen();
   }
 
@@ -382,6 +409,10 @@ export function createCanvasViewport(canvas, {
     onZoomChange({ zoom, percent: Math.round(zoom * 100), fitMode });
   }
 
+  function notifyCropChange() {
+    if (draftCrop) onCropChange({ ...draftCrop, aspectRatio: cropAspectRatio });
+  }
+
   function handleWheel(event) {
     if (!image) return;
     event.preventDefault();
@@ -427,14 +458,15 @@ export function createCanvasViewport(canvas, {
       const point = canvasPoint(event);
       const bounds = getTransformedDimensions(image.naturalWidth, image.naturalHeight, transform);
       if (cropDrag.mode === 'draw') {
-        draftCrop = createCropFromPoints(cropDrag.anchor, screenToCropPoint(point), bounds);
+        draftCrop = createCropFromPoints(cropDrag.anchor, screenToCropPoint(point), bounds, undefined, cropAspectRatio);
       } else {
         const dx = (point.x - cropDrag.x) / zoom;
         const dy = (point.y - cropDrag.y) / zoom;
         draftCrop = cropDrag.mode === 'move'
           ? moveCropRect(cropDrag.start, dx, dy, bounds)
-          : resizeCropRect(cropDrag.start, cropDrag.handle, dx, dy, bounds);
+          : resizeCropRect(cropDrag.start, cropDrag.handle, dx, dy, bounds, undefined, cropAspectRatio);
       }
+      notifyCropChange();
       scheduleRender();
       return;
     }
@@ -516,7 +548,8 @@ export function createCanvasViewport(canvas, {
       if (directions[event.key]) {
         const [dx, dy] = directions[event.key];
         const bounds = getTransformedDimensions(image.naturalWidth, image.naturalHeight, transform);
-        draftCrop = resizeCropRect(draftCrop, selectedCropHandle, dx * (event.shiftKey ? 10 : 1), dy * (event.shiftKey ? 10 : 1), bounds);
+        draftCrop = resizeCropRect(draftCrop, selectedCropHandle, dx * (event.shiftKey ? 10 : 1), dy * (event.shiftKey ? 10 : 1), bounds, undefined, cropAspectRatio);
+        notifyCropChange();
         scheduleRender(); event.preventDefault();
       }
       return;
@@ -570,7 +603,7 @@ export function createCanvasViewport(canvas, {
   }
 
   function updateCropCursor(point) {
-    for (const name of [...CROP_HANDLES.map((handle) => `is-crop-${handle}`), 'is-crop-move']) canvas.classList.remove(name);
+    clearCropCursorClasses();
     const box = cropScreenBox();
     const handle = hitCropHandle(point, box);
     const bounds = getTransformedDimensions(image.naturalWidth, image.naturalHeight, transform);
@@ -579,6 +612,10 @@ export function createCanvasViewport(canvas, {
       && Math.abs(draftCrop.height - bounds.height) <= 0.0001;
     if (handle) canvas.classList.add(`is-crop-${handle}`);
     else if (insideCrop(point, box) && !isFull) canvas.classList.add('is-crop-move');
+  }
+
+  function clearCropCursorClasses() {
+    for (const name of [...CROP_HANDLES.map((handle) => `is-crop-${handle}`), 'is-crop-move']) canvas.classList.remove(name);
   }
 }
 

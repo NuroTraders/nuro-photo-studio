@@ -18,7 +18,7 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. The app includes a responsive dashboard, theme switch, navigation, and shared UI components. In Photo Editor, open a local JPG/JPEG, PNG or WebP image, or drop one into the workspace. The canvas supports fit-to-screen, actual size, zoom controls, wheel zoom, drag panning, 90-degree rotation, horizontal/vertical flips, and a non-destructive crop tool with movable and resizable handles. Imports are limited to 100 MB, 80 megapixels and 20,000 pixels per side. The image remains on-device and its original file is held unchanged; project saving, undo/redo, and export are not yet available.
+Open the local URL printed by Vite. The app includes a responsive dashboard, theme switch, navigation, and shared UI components. In Photo Editor, open a local JPG/JPEG, PNG or WebP image, or drop one into the workspace. The canvas supports fit-to-screen, actual size, zoom controls, wheel zoom, drag panning, 90-degree rotation, horizontal/vertical flips, and non-destructive crop with drag-to-draw, aspect presets, and pixel dimension controls. Imports are limited to 100 MB, 80 megapixels and 20,000 pixels per side. The image remains on-device and its original file is held unchanged; project saving, undo/redo, and export are not yet available.
 
 ## PWA preview
 

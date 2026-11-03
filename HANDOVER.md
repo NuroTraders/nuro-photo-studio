@@ -55,12 +55,12 @@ Phase 2 Tasks 1–3 are implemented; Tasks 2, 3, and 4 are accepted. Task 5 Crop
 
 1. Define an image document that retains the original source and separates working state.
 2. Add validated import for JPG/JPEG, PNG and WebP; report unsupported files and size limits.
-3. Phase 2 Tasks 2–4 are accepted. Phase 2 Task 5 Crop is implemented and ready for review. Keep future editing operations isolated from the viewport.
+3. Phase 2 Tasks 2–4 are accepted. Phase 2 Task 5 Crop and the joint Tasks 4/5 modernization are implemented and ready for review. Keep future editing operations isolated from the viewport.
 4. Add before/after comparison and safe export to PNG/JPEG/WebP without overwriting source.
 5. Add preview-resolution rendering and full-resolution export path; test large-image memory failures.
 6. Add interaction and integration checks for browser and Electron.
 
-Keep UI components thin. Image algorithms belong in `editor/` or `processing/`, not in DOM event handlers. Preserve local-only processing and do not begin model integration until its own phase has approved model/license/runtime details. Current project position: Phase 2 Task 4 is implemented and awaits review; Task 5 Crop must wait for Task 4 acceptance.
+Keep UI components thin. Image algorithms belong in `editor/` or `processing/`, not in DOM event handlers. Preserve local-only processing and do not begin model integration until its own phase has approved model/license/runtime details. Current project position: Tasks 4 and 5 are implemented; their latest UI refinements await review. Do not begin Task 6 before approval.
 
 ## Phase 2 Task 4 — Rotate & Flip
 
@@ -127,24 +127,27 @@ Crop state is expressed in source image coordinates and mapped into the transfor
 
 No Undo/Redo, export changes, AI, external library, or version bump. Request user review and acceptance of Task 5 before beginning Task 6 Undo/Redo.
 
-## Phase 2 Tasks 4 & 5 UI Refinements
+## Phase 2 Tasks 4 & 5 Refinements: Minimal Icons, Modern Crop & Ratio Presets
 
 **Status:** Implemented; ready for user review. App version remains `0.1.0`.
 
 ### Changes
 
-- `www/js/feature-screens.js` — replaced full-text Rotate/Flip controls with compact 40px inline SVG buttons; retained descriptive `aria-label`, `title`, disabled states, and the existing `R` / `Shift+R` shortcuts. Added a compact pill crop action bar with Apply, Cancel, and Reset labels.
-- `www/js/editor/viewport.js` — changed the crop frame to a light 1.5px border, subtle thirds grid, L-shaped corner brackets, thin edge grips, and a 65% dark scrim. Added crop cursor feedback for drawing, moving, and each resize direction. Dragging on a full-image selection or outside an existing crop draws a new selection; existing handles resize and the interior moves the selection.
-- `www/js/editor/crop-tool.js` — added normalized drag-to-create geometry with minimum-size and strict image-bound clamping.
-- `www/styles.css` — added compact transform icon sizing, pill-bar styling, crop cursor states, and the modernized action-button layout.
-- `scripts/test-crop.mjs` and `scripts/test-viewport.mjs` — added drag selection direction/minimum/edge cases and viewport draw-to-crop interaction coverage; retained transform and crop behavior tests.
+- `www/js/feature-screens.js` — replaced full-text Rotate/Flip controls with compact 40px inline SVG buttons; retained descriptive `aria-label`, `title`, disabled states, and the existing `R` / `Shift+R` shortcuts. Added a compact pill crop action bar with accessible Ratio presets, live W/H pixel fields, Apply, Cancel, and Reset.
+- `www/js/editor/viewport.js` — changed the crop frame to a light 1.5px border, subtle thirds grid, L-shaped corner brackets, thin edge grips, and a 65% dark scrim. Added draw/move/resize cursor feedback; drag-to-draw, ratio lock, and numeric dimension updates remain crop geometry state.
+- `www/js/editor/crop-tool.js` — added centered ratio conformance, locked ratio resize/draw math, pixel dimension updates, and minimum-size/image-bound clamping.
+- `www/js/app.js` and `www/js/feature-screens.js` — connected Freeform, Original, 1:1, 4:3, 16:9, 3:2, and 9:16 presets, live W/H pixel inputs, transform-aware Original ratio, and reset behavior.
+- `www/styles.css` — added compact transform icon sizing, responsive crop settings/pill-bar styling, and crop cursor states.
+- `scripts/test-crop.mjs` and `scripts/test-viewport.mjs` — cover ratio math, locked edge/corner resizing, dimension input updates, clamping, drag selection, viewport ratio state, and reset on replacement.
+- `README.md` and `docs/ARCHITECTURE.md` — describe ratio and pixel controls as non-destructive crop state.
 
 ### Validation
 
-- `npm test` — passed, 18 tests / 18 passed / 0 failed.
-- `npm run check` — pending final run.
-- `npm run build` — pending final run; existing informational `theme-init.js` warning may appear.
-- `git diff --check` — pending final run.
+- `npm test` — passed, 21 tests / 21 passed / 0 failed, including fixed-ratio drawing and handle resizing, Original/quarter-turn mapping coverage, pixel dimension updates, and bounds clamping.
+- `npm run check` — passed (`Project structure OK`, 17 required files).
+- `npm run build` — passed; Vite printed the existing informational warning that static `theme-init.js` cannot be bundled without `type="module"`.
+- `git diff --check` — passed; Git emitted working-copy LF-to-CRLF notices.
+- Manual runtime tests were not performed by the coding agent per the latest pasted testing instruction. A user-facing manual verification guide is included in the implementation report.
 
 No source image mutation, external library, version bump, Undo/Redo, or export behavior was introduced. Do not begin Task 6 until the user approves these refinements and Task 5.
 

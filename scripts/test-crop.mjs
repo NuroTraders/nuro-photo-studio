@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  clampCropRect, createCropFromPoints, createFullCrop, mapCropRectToSource, mapCropRectToVisual,
-  moveCropRect, resizeCropRect,
+  clampCropRect, conformCropRectToAspect, createCropFromPoints, createFullCrop, mapCropRectToSource, mapCropRectToVisual,
+  moveCropRect, resizeCropRect, resizeCropToDimensions,
 } from '../www/js/editor/crop-tool.js';
 
 const bounds = { width: 300, height: 200 };
@@ -33,4 +33,33 @@ test('drag selection normalizes direction, enforces minimum size, and clamps to 
   assert.deepEqual(createCropFromPoints({ x: 150, y: 125 }, { x: 50, y: 50 }, bounds), { x: 50, y: 50, width: 100, height: 75 });
   assert.deepEqual(createCropFromPoints({ x: 298, y: 198 }, { x: 500, y: 500 }, bounds), { x: 280, y: 180, width: 20, height: 20 });
   assert.deepEqual(createCropFromPoints({ x: 10, y: 10 }, { x: 12, y: 14 }, bounds), { x: 10, y: 10, width: 20, height: 20 });
+});
+
+test('aspect presets conform around the crop center and lock drags to the selected ratio', () => {
+  const crop = { x: 20, y: 20, width: 100, height: 80 };
+  const square = conformCropRectToAspect(crop, bounds, 1);
+  assert.deepEqual(square, { x: 30, y: 20, width: 80, height: 80 });
+  const selection = createCropFromPoints({ x: 50, y: 50 }, { x: 150, y: 100 }, bounds, 20, 1);
+  assert.deepEqual(selection, { x: 50, y: 50, width: 100, height: 100 });
+  const edgeSelection = createCropFromPoints({ x: 298, y: 198 }, { x: 300, y: 200 }, bounds, 20, 1);
+  assert.deepEqual(edgeSelection, { x: 278, y: 178, width: 20, height: 20 });
+  const edgeResize = resizeCropRect({ x: 20, y: 20, width: 100, height: 100 }, 'e', 20, 0, bounds, 20, 1);
+  assert.deepEqual(edgeResize, { x: 20, y: 10, width: 120, height: 120 });
+  const cornerResize = resizeCropRect({ x: 20, y: 20, width: 100, height: 100 }, 'se', 20, 20, bounds, 20, 1);
+  assert.deepEqual(cornerResize, { x: 20, y: 20, width: 120, height: 120 });
+});
+
+test('pixel dimension changes update the paired field under a locked ratio and clamp to bounds', () => {
+  const start = { x: 80, y: 50, width: 120, height: 90 };
+  const widthChange = resizeCropToDimensions(start, 160, 90, 'width', bounds, 4 / 3);
+  assert.ok(Math.abs(widthChange.width - 160) < 1e-8);
+  assert.ok(Math.abs(widthChange.height - 120) < 1e-8);
+  const heightChange = resizeCropToDimensions(start, 120, 100, 'height', bounds, 16 / 9);
+  assert.ok(Math.abs(heightChange.height - 100) < 1e-8);
+  assert.ok(Math.abs(heightChange.width - (100 * 16 / 9)) < 1e-8);
+  const clamped = resizeCropToDimensions(start, 900, 90, 'width', bounds, 4 / 3);
+  assert.ok(clamped.x >= 0 && clamped.y >= 0);
+  assert.ok(clamped.x + clamped.width <= bounds.width);
+  assert.ok(clamped.y + clamped.height <= bounds.height);
+  assert.ok(Math.abs(clamped.width / clamped.height - 4 / 3) < 1e-8);
 });
