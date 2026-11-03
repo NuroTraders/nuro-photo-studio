@@ -1,6 +1,6 @@
 # Nuro Photo Studio — Handover
 
-**Current milestone:** Phase 0 starter repository  
+**Current milestone:** Phase 1 — Design System complete  
 **Specification baseline:** NPS-TS-001 v1.0 (draft engineering baseline)  
 **State:** Foundation scaffold; no production editing or AI behavior yet
 
@@ -31,7 +31,11 @@
 
 ## Phase 1 task plan
 
-Implement the classical image editor engine first, without AI:
+Completed:
+
+1. **Design system:** centralized dark-first CSS tokens and shared UI styles, with a coordinated light theme available via `data-theme="light"` on the root element. Existing Phase 0 shell retained and restyled; no new dependencies or AI/image-processing behavior added.
+
+Next tasks — implement the classical image editor engine without AI:
 
 1. Define an image document that retains the original source and separates working state.
 2. Add validated import for JPG/JPEG, PNG and WebP; report unsupported files and size limits.
@@ -54,3 +58,4 @@ Keep UI components thin. Image algorithms belong in `editor/` or `processing/`, 
 
 - Phase 0: initial project skeleton authored from the referenced v1.0 specification and proposal context.
 - PWA Pages follow-up: use the explicit project-site start URL and scope, publish the service worker with the Vite build, and keep precache entries aligned with production output.
+- Phase 1 Task 1: established dark-default design tokens, reusable controls and shell component styles, visible keyboard focus, and a token-coordinated light theme. Checked with `npm run check` and `npm run build`.
