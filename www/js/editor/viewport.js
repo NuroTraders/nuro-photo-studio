@@ -20,7 +20,8 @@ export function createCanvasViewport(canvas, { emptyState = null, onZoomChange =
   let height = 0;
   let pixelRatio = 1;
   let frame = 0;
-  let drag = null;
+  const pointers = new Map();
+  let gesture = null;
 
   canvas.tabIndex = 0;
   canvas.setAttribute('role', 'img');
@@ -47,8 +48,7 @@ export function createCanvasViewport(canvas, { emptyState = null, onZoomChange =
       canvas.setAttribute('aria-label', image
         ? `Image viewport displaying ${image.alt || 'the imported image'}. Use the zoom controls to inspect it.`
         : 'Image viewport is empty.');
-      drag = null;
-      canvas.classList.remove('is-panning');
+      cancelGesture();
       if (image) fitToScreen();
       else {
         fitMode = true;
@@ -71,7 +71,7 @@ export function createCanvasViewport(canvas, { emptyState = null, onZoomChange =
       resizeObserver?.disconnect();
       controller.abort();
       image = null;
-      drag = null;
+      cancelGesture();
       canvas.classList.remove('is-panning');
       canvas.width = 0;
       canvas.height = 0;
@@ -172,31 +172,77 @@ export function createCanvasViewport(canvas, { emptyState = null, onZoomChange =
     const rect = host.getBoundingClientRect();
     const anchorX = event.clientX - rect.left;
     const anchorY = event.clientY - rect.top;
-    setZoom(zoom * Math.exp(-event.deltaY * 0.0015), anchorX, anchorY);
+    const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? height : 1;
+    const delta = clamp(event.deltaY * unit, -2400, 2400);
+    setZoom(zoom * Math.exp(-delta * 0.0015), anchorX, anchorY);
   }
 
   function handlePointerDown(event) {
-    if (!image || event.button !== 0) return;
+    if (!image || event.button !== 0 || pointers.has(event.pointerId)) return;
     event.preventDefault();
-    drag = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, panX, panY };
-    canvas.classList.add('is-panning');
+    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
     canvas.setPointerCapture(event.pointerId);
+    beginGesture();
   }
 
   function handlePointerMove(event) {
-    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (!pointers.has(event.pointerId) || !gesture) return;
     event.preventDefault();
+    pointers.set(event.pointerId, { ...pointers.get(event.pointerId), x: event.clientX, y: event.clientY });
     fitMode = false;
-    panX = drag.panX + event.clientX - drag.x;
-    panY = drag.panY + event.clientY - drag.y;
+    if (gesture.type === 'pinch' && pointers.size >= 2) {
+      const [first, second] = [...pointers.values()];
+      const midpoint = midpointOf(first, second);
+      const distance = Math.max(1, distanceBetween(first, second));
+      const nextZoom = clamp(gesture.zoom * distance / gesture.distance, MIN_ZOOM, MAX_ZOOM);
+      const imageX = (gesture.midpoint.x - width / 2 - gesture.panX) / gesture.zoom;
+      const imageY = (gesture.midpoint.y - height / 2 - gesture.panY) / gesture.zoom;
+      zoom = nextZoom;
+      panX = midpoint.x - width / 2 - imageX * zoom;
+      panY = midpoint.y - height / 2 - imageY * zoom;
+      reportZoom();
+    } else if (gesture.type === 'pan') {
+      const point = pointers.get(gesture.pointerId);
+      panX = gesture.panX + point.x - gesture.x;
+      panY = gesture.panY + point.y - gesture.y;
+    }
     scheduleRender();
   }
 
   function finishPointer(event) {
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    drag = null;
-    canvas.classList.remove('is-panning');
+    if (!pointers.has(event.pointerId)) return;
+    pointers.delete(event.pointerId);
     if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+    beginGesture();
+  }
+
+  function beginGesture() {
+    if (pointers.size >= 2) {
+      const [first, second] = [...pointers.values()];
+      gesture = {
+        type: 'pinch', zoom, panX, panY,
+        distance: Math.max(1, distanceBetween(first, second)),
+        midpoint: midpointOf(first, second),
+      };
+      canvas.classList.add('is-panning');
+    } else if (pointers.size === 1) {
+      const [pointerId, point] = pointers.entries().next().value;
+      gesture = { type: 'pan', pointerId, x: point.x, y: point.y, panX, panY };
+      canvas.classList.add('is-panning');
+    } else {
+      gesture = null;
+      canvas.classList.remove('is-panning');
+    }
+  }
+
+  function cancelGesture() {
+    const captured = [...pointers.keys()].filter((pointerId) => canvas.hasPointerCapture(pointerId));
+    pointers.clear();
+    gesture = null;
+    canvas.classList.remove('is-panning');
+    for (const pointerId of captured) {
+      if (canvas.hasPointerCapture(pointerId)) canvas.releasePointerCapture(pointerId);
+    }
   }
 
   function handleKeyDown(event) {
@@ -220,6 +266,14 @@ export function createCanvasViewport(canvas, { emptyState = null, onZoomChange =
     panY += y;
     scheduleRender();
   }
+}
+
+function midpointOf(a, b) {
+  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+}
+
+function distanceBetween(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
 function clamp(value, min, max) {
