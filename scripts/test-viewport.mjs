@@ -342,3 +342,20 @@ test('viewport ratio presets conform the draft, pixel changes stay proportional,
   assert.equal(viewport.getState().cropAspectRatio, null);
   viewport.destroy();
 });
+
+test('viewport crop orientation swaps ratio and dimensions while keeping the draft in image bounds', () => {
+  const { viewport } = setup();
+  viewport.setImage({ naturalWidth: 300, naturalHeight: 200 });
+  viewport.setCropAspectRatio(16 / 9);
+  viewport.beginCrop();
+  const before = viewport.getState().draftCrop;
+  const swapped = viewport.swapCropOrientation(9 / 16);
+  assert.equal(viewport.getState().cropAspectRatio, 9 / 16);
+  assert.ok(Math.abs(swapped.width / swapped.height - 9 / 16) < 1e-8);
+  assert.ok(swapped.x >= 0 && swapped.y >= 0);
+  assert.ok(swapped.x + swapped.width <= 300);
+  assert.ok(swapped.y + swapped.height <= 200);
+  assert.deepEqual(viewport.getState().draftCrop, swapped);
+  assert.notDeepEqual(swapped, before);
+  viewport.destroy();
+});

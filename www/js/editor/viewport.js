@@ -1,7 +1,7 @@
 import { DEFAULT_TRANSFORM, getTransformedDimensions, normalizeTransform } from './transform-tool.js';
 import {
   clampCropRect, createFullCrop, mapCropRectToSource, mapCropRectToVisual,
-  conformCropRectToAspect, createCropFromPoints, moveCropRect, resizeCropRect, resizeCropToDimensions,
+  conformCropRectToAspect, createCropFromPoints, moveCropRect, resizeCropRect, resizeCropToDimensions, swapCropRectDimensions,
 } from './crop-tool.js';
 
 const MIN_ZOOM = 0.01;
@@ -109,6 +109,15 @@ export function createCanvasViewport(canvas, {
       if (!cropMode || !draftCrop) return null;
       const bounds = getTransformedDimensions(image.naturalWidth, image.naturalHeight, transform);
       draftCrop = resizeCropToDimensions(draftCrop, requestedWidth, requestedHeight, changedDimension, bounds, cropAspectRatio);
+      notifyCropChange();
+      scheduleRender();
+      return { ...draftCrop };
+    },
+    swapCropOrientation(aspectRatio = null) {
+      if (!cropMode || !draftCrop) return null;
+      const bounds = getTransformedDimensions(image.naturalWidth, image.naturalHeight, transform);
+      draftCrop = swapCropRectDimensions(draftCrop, bounds);
+      cropAspectRatio = Number.isFinite(aspectRatio) && aspectRatio > 0 ? aspectRatio : null;
       notifyCropChange();
       scheduleRender();
       return { ...draftCrop };

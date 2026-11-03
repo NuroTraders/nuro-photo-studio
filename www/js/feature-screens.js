@@ -77,7 +77,7 @@ export function updateEditorImageUI(container, image) {
     status.setAttribute('role', 'status');
   }
 
-  workspace.querySelectorAll('[data-viewport-action], [data-transform-action], [data-viewport-zoom], [data-crop-action], [data-crop-ratio], [data-crop-width], [data-crop-height]').forEach((control) => {
+  workspace.querySelectorAll('[data-viewport-action], [data-transform-action], [data-viewport-zoom], [data-crop-action], [data-crop-ratio], [data-crop-width], [data-crop-height], [data-crop-orientation]').forEach((control) => {
     control.disabled = !image;
   });
 
@@ -433,8 +433,8 @@ function createViewportControls(hasImage = false) {
   ratioSelect.title = 'Choose crop aspect ratio';
   ratioSelect.disabled = !hasImage;
   for (const [value, label] of [
-    ['freeform', 'Freeform'], ['original', 'Original'], ['1:1', '1:1'], ['4:3', '4:3'],
-    ['16:9', '16:9'], ['3:2', '3:2'], ['9:16', '9:16'],
+    ['freeform', 'Freeform'], ['original', 'Original'], ['1:1', '1:1'], ['4:3', '4:3'], ['3:4', '3:4'],
+    ['16:9', '16:9'], ['9:16', '9:16'], ['3:2', '3:2'], ['2:3', '2:3'],
   ]) {
     const option = document.createElement('option');
     option.value = value;
@@ -443,6 +443,13 @@ function createViewportControls(hasImage = false) {
   }
   ratioLabel.append(ratioSelect);
   cropSettings.append(ratioLabel);
+
+  const orientationButton = createButton({ label: '', variant: 'secondary', className: 'crop-orientation-button', disabled: !hasImage });
+  orientationButton.append(createSvgIcon(['M2.5 4h6v12h-6z', 'M11.5 6h6v8h-6z', 'M6 2.5 8.5 4.5 6 6.5', 'M14 17.5l-2.5-2 2.5-2']));
+  orientationButton.setAttribute('aria-label', 'Rotate crop orientation');
+  orientationButton.title = 'Rotate crop orientation / Swap W×H (X)';
+  orientationButton.dataset.cropOrientation = 'true';
+  cropSettings.append(orientationButton);
 
   const dimensions = document.createElement('div');
   dimensions.className = 'crop-pixel-dimensions';
@@ -517,7 +524,7 @@ function createSvgIcon(paths) {
   return svg;
 }
 
-export function updateEditorCropUI(container, { hasImage, cropMode, hasCrop, draftCrop, cropBounds, ratioPreset = 'freeform', forceDimensions = false }) {
+export function updateEditorCropUI(container, { hasImage, cropMode, hasCrop, draftCrop, cropBounds, ratioPreset = 'freeform', originalOrientation = 'Landscape', forceDimensions = false }) {
   const controls = container.querySelectorAll('[data-crop-action]');
   controls.forEach((button) => {
     const action = button.dataset.cropAction;
@@ -529,6 +536,10 @@ export function updateEditorCropUI(container, { hasImage, cropMode, hasCrop, dra
   const ratio = container.querySelector('[data-crop-ratio]');
   if (settings) settings.hidden = !cropMode;
   if (ratio) { ratio.disabled = !hasImage || !cropMode; ratio.value = ratioPreset; }
+  const originalOption = ratio?.querySelector('option[value="original"]');
+  if (originalOption) originalOption.textContent = `Original (${originalOrientation})`;
+  const orientationButton = container.querySelector('[data-crop-orientation]');
+  if (orientationButton) { orientationButton.disabled = !hasImage || !cropMode; orientationButton.hidden = !cropMode; }
   for (const [dimension, dataKey] of [['width', 'cropWidth'], ['height', 'cropHeight']]) {
     const input = container.querySelector(`[data-${dataKey.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}]`);
     if (!input) continue;

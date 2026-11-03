@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   clampCropRect, conformCropRectToAspect, createCropFromPoints, createFullCrop, mapCropRectToSource, mapCropRectToVisual,
-  moveCropRect, resizeCropRect, resizeCropToDimensions,
+  invertCropAspectRatio, moveCropRect, resizeCropRect, resizeCropToDimensions, swapCropAspectPreset, swapCropRectDimensions,
 } from '../www/js/editor/crop-tool.js';
 
 const bounds = { width: 300, height: 200 };
@@ -62,4 +62,30 @@ test('pixel dimension changes update the paired field under a locked ratio and c
   assert.ok(clamped.x + clamped.width <= bounds.width);
   assert.ok(clamped.y + clamped.height <= bounds.height);
   assert.ok(Math.abs(clamped.width / clamped.height - 4 / 3) < 1e-8);
+});
+
+test('crop orientation swaps inverse presets and leaves square, Original, and Freeform selections intact', () => {
+  for (const [portrait, landscape] of [['9:16', '16:9'], ['3:4', '4:3'], ['2:3', '3:2']]) {
+    assert.equal(swapCropAspectPreset(portrait), landscape);
+    assert.equal(swapCropAspectPreset(landscape), portrait);
+  }
+  for (const preset of ['1:1', 'Original', 'original', 'Freeform', 'freeform']) {
+    assert.equal(swapCropAspectPreset(preset), preset);
+  }
+  assert.equal(invertCropAspectRatio(16 / 9), 9 / 16);
+  assert.equal(invertCropAspectRatio(1), 1);
+  assert.equal(invertCropAspectRatio(null), null);
+});
+
+test('crop orientation swaps W/H around center and uniformly scales to image bounds', () => {
+  assert.deepEqual(swapCropRectDimensions({ x: 50, y: 20, width: 100, height: 150 }, bounds), {
+    x: 25, y: 45, width: 150, height: 100,
+  });
+  const scaled = swapCropRectDimensions({ x: 10, y: 10, width: 280, height: 180 }, bounds);
+  assert.ok(scaled.x >= 0 && scaled.y >= 0);
+  assert.ok(scaled.x + scaled.width <= bounds.width);
+  assert.ok(scaled.y + scaled.height <= bounds.height);
+  assert.ok(Math.abs(scaled.width / scaled.height - 180 / 280) < 1e-8);
+  assert.ok(Math.abs(scaled.x + scaled.width / 2 - 150) < 1e-8);
+  assert.ok(Math.abs(scaled.y + scaled.height / 2 - 100) < 1e-8);
 });

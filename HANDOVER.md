@@ -151,6 +151,25 @@ No Undo/Redo, export changes, AI, external library, or version bump. Request use
 
 No source image mutation, external library, version bump, Undo/Redo, or export behavior was introduced. Do not begin Task 6 until the user approves these refinements and Task 5.
 
+## Crop Box Orientation Rotate — Ratio & Dimension Swap
+
+**Status:** Implemented; awaiting user manual verification. App version remains `0.1.0`.
+
+### Changes
+
+- Added a compact accessible crop orientation button beside the Ratio selector and an `X` shortcut while crop mode is active.
+- Added inverse preset mapping for 16:9/9:16, 4:3/3:4, and 3:2/2:3. Square remains square; Original retains its preset and toggles its landscape/portrait ratio; Freeform stays freeform.
+- Swaps crop width and height around the prior center, scales both dimensions uniformly when needed to fit transformed image bounds, clamps the resulting origin, and refreshes the viewport overlay and W/H fields.
+- Added crop math and viewport tests. Original image bytes and decoded source image remain unchanged; orientation is crop draft state.
+
+### Validation
+
+- `npm test` — passed (24 tests, 0 failures), including inverse preset mappings, centered W/H swap, proportional bounds scaling, and viewport ratio/dimension state.
+- `npm run check`, `npm run build`, and `git diff --check` — run for this update; results are recorded in the final task report.
+- Per the task instruction, no browser, Electron, local server, or manual UI runtime test was launched. Follow the manual verification guide in the final task report.
+
+No package version change. No Task 6 work was started.
+
 ## Decisions and open items
 
 - Vite provides dev/build only; no frontend framework.

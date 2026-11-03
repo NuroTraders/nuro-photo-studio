@@ -1,6 +1,19 @@
 import { getTransformedDimensions, normalizeTransform } from './transform-tool.js';
 
 export const MIN_CROP_SIZE = 20;
+const ASPECT_PRESET_SWAPS = Object.freeze({
+  '16:9': '9:16', '9:16': '16:9',
+  '4:3': '3:4', '3:4': '4:3',
+  '3:2': '2:3', '2:3': '3:2',
+});
+
+export function swapCropAspectPreset(preset) {
+  return ASPECT_PRESET_SWAPS[preset] || preset;
+}
+
+export function invertCropAspectRatio(ratio) {
+  return isAspectRatio(ratio) ? 1 / ratio : null;
+}
 
 export function createFullCrop(width, height) {
   return { x: 0, y: 0, width, height };
@@ -26,6 +39,18 @@ export function moveCropRect(rect, deltaX, deltaY, bounds) {
     x: clamp(safe.x + deltaX, 0, bounds.width - safe.width),
     y: clamp(safe.y + deltaY, 0, bounds.height - safe.height),
   };
+}
+
+/** Swap W/H around the prior center and uniformly scale down if the swapped box exceeds bounds. */
+export function swapCropRectDimensions(rect, bounds) {
+  let width = rect.height;
+  let height = rect.width;
+  const scale = Math.min(1, bounds.width / width, bounds.height / height);
+  width *= scale;
+  height *= scale;
+  const centerX = rect.x + rect.width / 2;
+  const centerY = rect.y + rect.height / 2;
+  return clampCropRect({ x: centerX - width / 2, y: centerY - height / 2, width, height }, bounds, 0.000001);
 }
 
 /** Create a clamped crop rectangle from two visual-space drag points. */
