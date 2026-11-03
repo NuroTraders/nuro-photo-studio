@@ -1,6 +1,6 @@
 # Nuro Photo Studio — Handover
 
-**Current milestone:** Phase 1 — Design System complete  
+**Current milestone:** Phase 1 — Application Layout complete  
 **Specification baseline:** NPS-TS-001 v1.0 (draft engineering baseline)  
 **State:** Foundation scaffold; no production editing or AI behavior yet
 
@@ -34,8 +34,9 @@
 Completed:
 
 1. **Design system:** centralized dark-first CSS tokens and shared UI styles, with a coordinated light theme available via `data-theme="light"` on the root element. Existing Phase 0 shell retained and restyled; no new dependencies or AI/image-processing behavior added.
+2. **Application layout:** responsive branded sidebar, grouped navigation for all seven planned areas, active screen state, header actions, theme switch, and a keyboard-accessible mobile navigation drawer. Navigation data is maintained separately from rendering logic in `www/js/navigation.js`.
 
-Next tasks — implement the classical image editor engine without AI:
+Next action: continue Phase 1 with image document architecture, without AI:
 
 1. Define an image document that retains the original source and separates working state.
 2. Add validated import for JPG/JPEG, PNG and WebP; report unsupported files and size limits.
