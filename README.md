@@ -1,6 +1,6 @@
 # Nuro Photo Studio
 
-**Phase 0 starter · v1.0 engineering baseline**
+**Phase 1 early build · app version 0.1.0**
 
 **Live preview:** [Nuro Photo Studio on GitHub Pages](https://nurotraders.github.io/nuro-photo-studio/)
 
@@ -18,7 +18,7 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. The shell has a responsive workspace, navigation, disabled tool placeholders, and an image picker preview. The preview is in-memory and is not uploaded or persisted.
+Open the local URL printed by Vite. The app includes a responsive dashboard, theme switch, navigation, and shared UI components. Photo importing and project saving are not yet available.
 
 ## PWA preview
 
@@ -46,6 +46,7 @@ npm run electron:dist
 ```text
 www/                 Browser app, PWA assets, ES modules
 www/js/core/         State, event bus, document/history and queue boundaries
+www/js/ui/           Reusable accessible DOM components
 www/js/editor/       Loader, canvas and viewport boundaries
 www/js/processing/   Adjustments and export boundaries
 www/js/features/     Enhancement, ID photo, print and upscaling feature slots

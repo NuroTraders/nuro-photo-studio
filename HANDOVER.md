@@ -1,7 +1,8 @@
 # Nuro Photo Studio — Handover
 
-**Current milestone:** Phase 1 — Home Dashboard complete  
+**Current milestone:** Phase 1 — Navigation and UI Components complete
 **Specification baseline:** NPS-TS-001 v1.0 (draft engineering baseline)  
+**App version:** 0.1.0 (see Version history below)
 **State:** Foundation scaffold; no production editing or AI behavior yet
 
 ## What is here
@@ -12,6 +13,7 @@
 - Electron main/preload with context isolation, sandbox, restrictive navigation, and narrow metadata bridge.
 - Electron Builder Windows NSIS configuration.
 - Architecture, privacy/security, initialization, release, model-policy and Phase 0 checklist docs.
+- Shared vanilla DOM components and their API guide in `www/js/ui/components.js` and `docs/UI-COMPONENTS.md`.
 - Validation/build helper scripts and npm lockfile.
 
 ## Deliberate boundaries
@@ -22,12 +24,15 @@
 - Image import and project persistence are not part of the current dashboard; no recent-project records are fabricated.
 - Signing, updates, analytics, persistence, ID compliance presets and production image algorithms are deferred.
 
-## Next action: Phase 0 completion
+## Collaboration rules
 
-1. Install Node.js 20.19+ or 22.12+ and run `npm install`.
-2. Run `npm run check`, `npm run build`, and `npm run electron:pack` on Windows.
-3. Manually verify PWA offline behavior and Electron security boundaries using `docs/PHASE-0-CHECKLIST.md`.
-4. Record platform/version results and any defects here before declaring Phase 0 accepted.
+1. Include GitHub commit and push commands in each final implementation report. Do not commit or push unless the user explicitly asks.
+2. Record every application version in the Version history section below. Whenever `package.json` version changes, add a matching dated note to `HANDOVER.md` with the version and user-visible changes; do not silently bump the version.
+3. Keep this handover current after each task so another model or contributor can resume without relying on chat history. Include current milestone, completed work, constraints, validation results and next action.
+
+## Version history
+
+- **0.1.0 (current; checked 2026-11-03)** — Phase 0 starter version, retained through Phase 1 Tasks 1–4. No release version bump has been made for these implementation tasks. The app sidebar displays this version; Git commits preserve task-level source history. A public GitHub Release/tag has not been recorded here.
 
 ## Phase 1 task plan
 
@@ -36,8 +41,9 @@ Completed:
 1. **Design system:** centralized dark-first CSS tokens and shared UI styles, with a coordinated light theme available via `data-theme="light"` on the root element. Existing Phase 0 shell retained and restyled; no new dependencies or AI/image-processing behavior added.
 2. **Application layout:** responsive branded sidebar, grouped navigation for all seven planned areas, active screen state, header actions, theme switch, and a keyboard-accessible mobile navigation drawer. Navigation data is maintained separately from rendering logic in `www/js/navigation.js`.
 3. **Home dashboard:** reusable dashboard renderer with a welcome panel, editor action, four quick actions, empty recent-project state, feature shortcuts, and privacy tip. Upcoming actions are labeled and non-interactive; no import behavior or project data is added.
+4. **Navigation and UI components:** added accessible vanilla DOM factories for buttons, icon buttons, cards, badges, native dialogs, keyboard dropdowns, timed toasts, form inputs, empty states, and loading indicators. Dashboard controls reuse the shared factories. API usage is documented in `docs/UI-COMPONENTS.md`.
 
-Next action: continue Phase 1 with image document architecture, without AI:
+Next action: define the image document model, keeping the original source separate from working state. Follow the current phase plan and do not add image importing until its scheduled phase.
 
 1. Define an image document that retains the original source and separates working state.
 2. Add validated import for JPG/JPEG, PNG and WebP; report unsupported files and size limits.
@@ -61,3 +67,4 @@ Keep UI components thin. Image algorithms belong in `editor/` or `processing/`, 
 - Phase 0: initial project skeleton authored from the referenced v1.0 specification and proposal context.
 - PWA Pages follow-up: use the explicit project-site start URL and scope, publish the service worker with the Vite build, and keep precache entries aligned with production output.
 - Phase 1 Task 1: established dark-default design tokens, reusable controls and shell component styles, visible keyboard focus, and a token-coordinated light theme. Checked with `npm run check` and `npm run build`.
+- Phase 1 Task 4: added reusable UI component factories and API documentation; dashboard cards, buttons, badges and empty state now use shared components. `npm run check`, changed-module syntax checks, and `git diff --check` pass. Browser interaction/console review remains pending.

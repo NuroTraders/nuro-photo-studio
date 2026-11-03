@@ -1,4 +1,5 @@
 import { dashboardFeatureShortcuts, dashboardQuickActions } from './navigation.js';
+import { createBadge, createButton, createCard, createEmptyState } from './ui/components.js';
 
 export function renderDashboard(container) {
   container.replaceChildren();
@@ -13,9 +14,13 @@ export function renderDashboard(container) {
       <p class="lede">A thoughtful place to prepare and work with your photos. Your files stay on this device.</p>
     </div>
     <div class="hero-action-wrap">
-      <button class="button primary hero-action" type="button" data-navigate="editor"><span class="action-icon" aria-hidden="true">＋</span><span><strong>Open Photo</strong><small>Go to Photo Editor</small></span><span class="action-arrow" aria-hidden="true">→</span></button>
       <p class="action-note">Photo importing is coming in a future phase.</p>
     </div>`;
+  const openPhoto = createButton({ label: '＋  Open Photo  →', variant: 'primary', className: 'hero-action' });
+  openPhoto.dataset.navigate = 'editor';
+  openPhoto.setAttribute('aria-label', 'Open Photo: go to Photo Editor');
+  openPhoto.innerHTML = '<span class="action-icon" aria-hidden="true">＋</span><span><strong>Open Photo</strong><small>Go to Photo Editor</small></span><span class="action-arrow" aria-hidden="true">→</span>';
+  hero.querySelector('.hero-action-wrap').prepend(openPhoto);
   container.append(hero);
 
   const quickSection = document.createElement('section');
@@ -25,8 +30,10 @@ export function renderDashboard(container) {
   const quickGrid = document.createElement('div');
   quickGrid.className = 'quick-action-grid';
   for (const action of dashboardQuickActions) {
-    const card = document.createElement(action.available ? 'button' : 'article');
-    card.className = `quick-action-card${action.available ? ' is-available' : ' is-upcoming'}`;
+    const card = action.available
+      ? createButton({ label: action.title, className: 'quick-action-card is-available' })
+      : document.createElement('article');
+    if (!action.available) card.className = 'quick-action-card is-upcoming';
     if (action.available) {
       card.type = 'button';
       card.dataset.navigate = action.id;
@@ -41,21 +48,19 @@ export function renderDashboard(container) {
   const lowerGrid = document.createElement('div');
   lowerGrid.className = 'dashboard-lower-grid';
 
-  const recent = document.createElement('section');
-  recent.className = 'dashboard-panel recent-panel';
-  recent.setAttribute('aria-labelledby', 'recent-title');
-  recent.innerHTML = `<div class="section-heading"><div><p class="eyebrow">YOUR WORK</p><h2 id="recent-title">Recent projects</h2></div></div><div class="recent-empty"><span class="empty-project-icon" aria-hidden="true">▱</span><h3>No recent projects yet</h3><p>Your projects will appear here when project saving is available.</p><span class="badge">Nothing stored</span></div>`;
+  const recent = createCard({ className: 'dashboard-panel recent-panel', tag: 'section', labelledBy: 'recent-title' });
+  recent.innerHTML = `<div class="section-heading"><div><p class="eyebrow">YOUR WORK</p><h2 id="recent-title">Recent projects</h2></div></div>`;
+  const recentEmpty = createEmptyState({ icon: '▱', title: 'No recent projects yet', description: 'Your projects will appear here when project saving is available.' });
+  recentEmpty.classList.add('recent-empty');
+  recentEmpty.append(createBadge({ label: 'Nothing stored' }));
+  recent.append(recentEmpty);
 
-  const features = document.createElement('section');
-  features.className = 'dashboard-panel features-panel';
-  features.setAttribute('aria-labelledby', 'features-title');
+  const features = createCard({ className: 'dashboard-panel features-panel', tag: 'section', labelledBy: 'features-title' });
   features.innerHTML = `<div class="section-heading"><div><p class="eyebrow">EXPLORE</p><h2 id="features-title">Feature shortcuts</h2></div></div>`;
   const featureList = document.createElement('div');
   featureList.className = 'feature-shortcut-list';
   for (const feature of dashboardFeatureShortcuts) {
-    const shortcut = document.createElement('button');
-    shortcut.className = 'feature-shortcut';
-    shortcut.type = 'button';
+    const shortcut = createButton({ label: feature.title, className: 'feature-shortcut' });
     shortcut.dataset.navigate = feature.id;
     shortcut.innerHTML = `<span class="shortcut-icon" aria-hidden="true">${feature.icon}</span><span class="shortcut-copy"><strong>${feature.title}</strong><small>${feature.description}</small></span><span class="shortcut-arrow" aria-hidden="true">→</span>`;
     featureList.append(shortcut);
