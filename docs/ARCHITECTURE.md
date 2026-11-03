@@ -16,7 +16,7 @@ UI events → core command/state → editor or processing module → preview/exp
 
 ## Offline behavior
 
-The service worker caches the small application shell and uses a network-first navigation fallback. It does not cache blobs, imported images, or models. Browser PWA requires localhost or HTTPS. Electron packages the built shell locally; it does not depend on a remote web origin.
+The service worker caches the small application shell and same-origin static assets as they are requested, with a network-first navigation fallback. The Pages workflow explicitly copies `www/sw.js` to `dist/sw.js`, because Vite does not publish that unreferenced source file automatically. It does not cache blobs, imported images, or models. Browser PWA requires localhost or HTTPS. Electron packages the built shell locally; it does not depend on a remote web origin.
 
 ## Security boundaries
 

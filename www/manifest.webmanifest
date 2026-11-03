@@ -1,10 +1,10 @@
 {
-  "id": ".",
+  "id": "/nuro-photo-studio/",
   "name": "Nuro Photo Studio",
   "short_name": "Nuro Studio",
   "description": "A local-first photo editing workspace.",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/nuro-photo-studio/",
+  "scope": "/nuro-photo-studio/",
   "display": "standalone",
   "background_color": "#10151b",
   "theme_color": "#10151b",

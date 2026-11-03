@@ -36,6 +36,9 @@ jobs:
       - name: Build app
         run: npm run build
 
+      - name: Include service worker in Pages build
+        run: cp www/sw.js dist/sw.js
+
       - name: Upload built site
         uses: actions/upload-pages-artifact@v4
         with:

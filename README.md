@@ -2,6 +2,8 @@
 
 **Phase 0 starter · v1.0 engineering baseline**
 
+**Live preview:** [Nuro Photo Studio on GitHub Pages](https://nurotraders.github.io/nuro-photo-studio/)
+
 Independent offline-first photo editor foundation for browser/PWA and Windows Electron. Phase 0 establishes the project, interfaces, security defaults, and delivery workflow. It does not implement editing algorithms, AI inference, model downloads, accounts, or cloud services.
 
 ## Requirements
@@ -25,7 +27,9 @@ npm run build
 npm run preview
 ```
 
-Serve the built site over localhost or HTTPS. Service workers do not register from `file://`. The starter service worker precaches only the application shell and uses network-first navigation fallback. It does not cache user images or model files.
+Serve the built site over localhost or HTTPS. Service workers do not register from `file://`. The Pages workflow copies the service worker into the Vite build output. It precaches the small app shell, caches same-origin static assets as they are requested, and uses a network-first navigation fallback. It does not cache user images or model files. After an online visit, reload once while online before trying the shell offline.
+
+For GitHub Pages, the workflow in `.github/workflows/deploy-pages.yml` builds the app into `dist/` and deploys it when changes reach `main`. The web app is publicly reachable at the live preview URL.
 
 ## Electron
 

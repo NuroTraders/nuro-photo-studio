@@ -53,3 +53,4 @@ Keep UI components thin. Image algorithms belong in `editor/` or `processing/`, 
 ## Update log
 
 - Phase 0: initial project skeleton authored from the referenced v1.0 specification and proposal context.
+- PWA Pages follow-up: use the explicit project-site start URL and scope, publish the service worker with the Vite build, and keep precache entries aligned with production output.
