@@ -1,21 +1,16 @@
 import { registerServiceWorker } from './bootstrap.js';
-import { createImagePreview } from './editor/image-loader.js';
-import { createAppState } from './core/state.js';
+import { renderDashboard } from './dashboard.js';
 import { navigationItems } from './navigation.js';
 
-const state = createAppState();
-const picker = document.querySelector('#file-input');
-const preview = document.querySelector('#preview');
-const emptyState = document.querySelector('#empty-state');
-const meta = document.querySelector('#image-meta');
-const title = document.querySelector('#canvas-title');
+const dashboard = document.querySelector('#main');
 const screenTitle = document.querySelector('#screen-title');
 const navigation = document.querySelector('#navigation-items');
 const sidebar = document.querySelector('#sidebar');
 const menuToggle = document.querySelector('#menu-toggle');
 const backdrop = document.querySelector('#sidebar-backdrop');
 const themeToggle = document.querySelector('#theme-toggle');
-let imagePreview = createImagePreview(preview);
+
+renderDashboard(dashboard);
 
 let currentGroup = '';
 for (const item of navigationItems) {
@@ -42,43 +37,35 @@ for (const item of navigationItems) {
   navigation.append(link);
 }
 
-for (const button of document.querySelectorAll('#open-image, #start-editing, #empty-open')) {
-  button.addEventListener('click', () => picker.click());
-}
-
-picker.addEventListener('change', async () => {
-  const file = picker.files?.[0];
-  picker.value = '';
-  if (!file) return;
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-    meta.textContent = 'Choose a JPG, PNG, or WebP image.';
-    return;
-  }
-  try {
-    const documentInfo = await imagePreview.show(file);
-    state.setActiveDocument(documentInfo);
-    emptyState.hidden = true;
-    preview.hidden = false;
-    title.textContent = documentInfo.name;
-    meta.textContent = `${documentInfo.width} × ${documentInfo.height} · ${formatBytes(file.size)}`;
-  } catch {
-    meta.textContent = 'This image could not be previewed. Try another file.';
-  }
-});
-
-navigation.addEventListener('click', (event) => {
-  const button = event.target.closest('[data-view]');
-  if (!button) return;
-  const item = navigationItems.find((entry) => entry.id === button.dataset.view);
+function navigateTo(screenId) {
+  const item = navigationItems.find((entry) => entry.id === screenId);
   if (!item) return;
   navigation.querySelectorAll('[data-view]').forEach((entry) => {
-    const active = entry === button;
+    const active = entry.dataset.view === item.id;
     entry.classList.toggle('active', active);
     entry.setAttribute('aria-current', active ? 'page' : 'false');
   });
   screenTitle.textContent = item.label;
-  if (item.id === 'editor' && state.activeDocument) title.textContent = state.activeDocument.name;
+  if (item.id === 'home') renderDashboard(dashboard);
+  else {
+    dashboard.replaceChildren();
+    const placeholder = document.createElement('section');
+    placeholder.className = 'screen-placeholder dashboard-panel';
+    placeholder.setAttribute('aria-labelledby', 'screen-placeholder-title');
+    const isEditor = item.id === 'editor';
+    placeholder.innerHTML = `<span class="placeholder-icon" aria-hidden="true">${item.icon}</span><p class="eyebrow">${isEditor ? 'PHOTO EDITOR' : 'COMING SOON'}</p><h2 id="screen-placeholder-title">${item.label}</h2><p>${isEditor ? 'The photo workspace is being prepared. Photo importing will be added in a future phase.' : 'This area is planned for a future release.'}</p><button class="button secondary" type="button" data-navigate="home">Back to Home</button>`;
+    dashboard.append(placeholder);
+  }
   closeMobileNavigation();
+}
+
+navigation.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-view]');
+  if (button) navigateTo(button.dataset.view);
+});
+dashboard.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-navigate]');
+  if (button) navigateTo(button.dataset.navigate);
 });
 
 menuToggle.addEventListener('click', () => {
@@ -108,7 +95,6 @@ themeToggle.addEventListener('click', () => {
   themeMeta.content = light ? '#f3f6f3' : '#10151b';
 });
 
-window.addEventListener('pagehide', () => imagePreview.dispose(), { once: true });
 registerServiceWorker();
 
 function closeMobileNavigation() {
@@ -116,8 +102,4 @@ function closeMobileNavigation() {
   backdrop.hidden = true;
   menuToggle.setAttribute('aria-expanded', 'false');
   menuToggle.setAttribute('aria-label', 'Open navigation');
-}
-
-function formatBytes(bytes) {
-  return bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

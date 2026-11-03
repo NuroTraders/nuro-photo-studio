@@ -28,26 +28,11 @@
           <div class="screen-heading"><p class="eyebrow">NURO PHOTO STUDIO</p><h1 id="screen-title">Home</h1></div>
           <div class="top-actions">
             <button id="theme-toggle" class="button secondary theme-toggle" type="button" aria-pressed="false" aria-label="Switch to light theme"><span class="theme-icon" aria-hidden="true">☼</span><span class="theme-label">Light theme</span></button>
-            <button id="open-image" class="button primary" type="button">Open image</button>
-            <input id="file-input" type="file" accept="image/jpeg,image/png,image/webp" hidden />
+            <span class="privacy"><i></i> Files stay on this device</span>
           </div>
         </header>
 
-        <main id="main" class="main-content" tabindex="-1">
-          <section class="welcome" aria-labelledby="welcome-title">
-            <p class="eyebrow accent">YOUR PRIVATE CREATIVE SPACE</p>
-            <h2 id="welcome-title">Make more of<br />every <em>moment.</em></h2>
-            <p class="lede">A thoughtful workspace for your photos. Everything runs locally on your device.</p>
-            <button id="start-editing" class="button primary large" type="button">＋ &nbsp;Open a photo</button>
-          </section>
-          <section class="workspace-card" aria-label="Image workspace">
-            <div class="workspace-head"><div><span class="workspace-kicker">CANVAS</span><h2 id="canvas-title">Your workspace</h2></div><span class="canvas-chip">LOCAL PREVIEW</span></div>
-            <div id="canvas-area" class="canvas-area"><div id="empty-state" class="empty-state"><div class="image-icon" aria-hidden="true">▧</div><p>Your canvas is ready</p><span>Choose an image to begin. Your files never leave this device.</span><button id="empty-open" class="button secondary" type="button">Browse images</button></div><img id="preview" alt="Local image preview" hidden /></div>
-            <div class="workspace-foot"><span id="image-meta">No image open</span><span>Editing tools arrive in Phase 1</span></div>
-          </section>
-          <section class="next-card" aria-label="About Nuro Photo Studio"><div class="next-icon" aria-hidden="true">✦</div><div><span class="eyebrow">COMING INTO FOCUS</span><h3>A calm space for serious photo work.</h3><p>Import, adjust, prepare ID photos, and export — with optional on-device AI in a later phase.</p></div><span class="phase-pill">FOUNDATION</span></section>
-          <footer>NURO PHOTO STUDIO <span>·</span> PRIVATE BY DESIGN</footer>
-        </main>
+        <main id="main" class="main-content dashboard" tabindex="-1" aria-labelledby="dashboard-title"></main>
       </div>
       <button id="sidebar-backdrop" class="sidebar-backdrop" type="button" aria-label="Close navigation" tabindex="-1" hidden></button>
     </div>

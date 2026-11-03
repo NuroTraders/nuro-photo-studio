@@ -1,6 +1,6 @@
 # Nuro Photo Studio — Handover
 
-**Current milestone:** Phase 1 — Application Layout complete  
+**Current milestone:** Phase 1 — Home Dashboard complete  
 **Specification baseline:** NPS-TS-001 v1.0 (draft engineering baseline)  
 **State:** Foundation scaffold; no production editing or AI behavior yet
 
@@ -19,7 +19,7 @@
 - No relationship, source dependency, clone, or changes to `NuroTraders/bg-remover`.
 - No AI runtime, model weights, inference, model download, or CDN runtime.
 - No image upload or cloud service.
-- The current picker is a disposable local preview only; it does not implement document management or edits.
+- Image import and project persistence are not part of the current dashboard; no recent-project records are fabricated.
 - Signing, updates, analytics, persistence, ID compliance presets and production image algorithms are deferred.
 
 ## Next action: Phase 0 completion
@@ -35,6 +35,7 @@ Completed:
 
 1. **Design system:** centralized dark-first CSS tokens and shared UI styles, with a coordinated light theme available via `data-theme="light"` on the root element. Existing Phase 0 shell retained and restyled; no new dependencies or AI/image-processing behavior added.
 2. **Application layout:** responsive branded sidebar, grouped navigation for all seven planned areas, active screen state, header actions, theme switch, and a keyboard-accessible mobile navigation drawer. Navigation data is maintained separately from rendering logic in `www/js/navigation.js`.
+3. **Home dashboard:** reusable dashboard renderer with a welcome panel, editor action, four quick actions, empty recent-project state, feature shortcuts, and privacy tip. Upcoming actions are labeled and non-interactive; no import behavior or project data is added.
 
 Next action: continue Phase 1 with image document architecture, without AI:
 
