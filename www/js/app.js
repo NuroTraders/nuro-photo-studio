@@ -1,5 +1,6 @@
 import { registerServiceWorker } from './bootstrap.js';
 import { renderDashboard } from './dashboard.js';
+import { renderFeatureScreen } from './feature-screens.js';
 import { navigationItems } from './navigation.js';
 
 const dashboard = document.querySelector('#main');
@@ -47,15 +48,7 @@ function navigateTo(screenId) {
   });
   screenTitle.textContent = item.label;
   if (item.id === 'home') renderDashboard(dashboard);
-  else {
-    dashboard.replaceChildren();
-    const placeholder = document.createElement('section');
-    placeholder.className = 'screen-placeholder dashboard-panel';
-    placeholder.setAttribute('aria-labelledby', 'screen-placeholder-title');
-    const isEditor = item.id === 'editor';
-    placeholder.innerHTML = `<span class="placeholder-icon" aria-hidden="true">${item.icon}</span><p class="eyebrow">${isEditor ? 'PHOTO EDITOR' : 'COMING SOON'}</p><h2 id="screen-placeholder-title">${item.label}</h2><p>${isEditor ? 'The photo workspace is being prepared. Photo importing will be added in a future phase.' : 'This area is planned for a future release.'}</p><button class="button secondary" type="button" data-navigate="home">Back to Home</button>`;
-    dashboard.append(placeholder);
-  }
+  else renderFeatureScreen(dashboard, item.id);
   closeMobileNavigation();
 }
 

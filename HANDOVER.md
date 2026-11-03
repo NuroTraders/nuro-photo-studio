@@ -1,6 +1,6 @@
 # Nuro Photo Studio — Handover
 
-**Current milestone:** Phase 1 — Navigation and UI Components complete
+**Current milestone:** Phase 1 — Feature Screen Layouts complete
 **Specification baseline:** NPS-TS-001 v1.0 (draft engineering baseline)  
 **App version:** 0.1.0 (see Version history below)
 **State:** Foundation scaffold; no production editing or AI behavior yet
@@ -8,7 +8,7 @@
 ## What is here
 
 - Independent Vite + vanilla ES module application shell under `www/`.
-- Responsive editor workspace and local image preview picker.
+- Responsive dashboard, feature screen layouts and navigation shell.
 - PWA manifest, app icons, and conservative service worker foundation.
 - Electron main/preload with context isolation, sandbox, restrictive navigation, and narrow metadata bridge.
 - Electron Builder Windows NSIS configuration.
@@ -42,6 +42,7 @@ Completed:
 2. **Application layout:** responsive branded sidebar, grouped navigation for all seven planned areas, active screen state, header actions, theme switch, and a keyboard-accessible mobile navigation drawer. Navigation data is maintained separately from rendering logic in `www/js/navigation.js`.
 3. **Home dashboard:** reusable dashboard renderer with a welcome panel, editor action, four quick actions, empty recent-project state, feature shortcuts, and privacy tip. Upcoming actions are labeled and non-interactive; no import behavior or project data is added.
 4. **Navigation and UI components:** added accessible vanilla DOM factories for buttons, icon buttons, cards, badges, native dialogs, keyboard dropdowns, timed toasts, form inputs, empty states, and loading indicators. Dashboard controls reuse the shared factories. API usage is documented in `docs/UI-COMPONENTS.md`.
+5. **Feature screen layouts:** added responsive Photo Editor, Enhance & Restore, ID Photo Studio, Batch Processing, Model Manager and Settings layouts. Controls are clearly visual placeholders where behavior is not implemented; no import, image processing, AI, model installation or fake queue data is presented.
 
 Next action: define the image document model, keeping the original source separate from working state. Follow the current phase plan and do not add image importing until its scheduled phase.
 
@@ -68,3 +69,4 @@ Keep UI components thin. Image algorithms belong in `editor/` or `processing/`, 
 - PWA Pages follow-up: use the explicit project-site start URL and scope, publish the service worker with the Vite build, and keep precache entries aligned with production output.
 - Phase 1 Task 1: established dark-default design tokens, reusable controls and shell component styles, visible keyboard focus, and a token-coordinated light theme. Checked with `npm run check` and `npm run build`.
 - Phase 1 Task 4: added reusable UI component factories and API documentation; dashboard cards, buttons, badges and empty state now use shared components. `npm run check`, changed-module syntax checks, and `git diff --check` pass. Browser interaction/console review remains pending.
+- Phase 1 Task 5: replaced generic navigation placeholders with responsive layouts for all six planned feature screens, using shared cards, badges, empty states and buttons. Confirmed with project and JavaScript syntax checks; manual browser/console review remains pending.

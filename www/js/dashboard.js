@@ -3,6 +3,7 @@ import { createBadge, createButton, createCard, createEmptyState } from './ui/co
 
 export function renderDashboard(container) {
   container.replaceChildren();
+  container.setAttribute('aria-labelledby', 'dashboard-title');
 
   const hero = document.createElement('section');
   hero.className = 'dashboard-hero';
