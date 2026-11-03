@@ -63,6 +63,11 @@ class MockCanvas {
     this.context = {
       setTransform: (...args) => this.transforms.push(args),
       clearRect: (...args) => this.clearCalls.push(args),
+      beginPath: () => this.transformCalls.push(['beginPath']),
+      rect: (...args) => this.transformCalls.push(['rect', ...args]),
+      clip: () => this.transformCalls.push(['clip']),
+      fillRect: (...args) => this.transformCalls.push(['fillRect', ...args]),
+      strokeRect: (...args) => this.transformCalls.push(['strokeRect', ...args]),
       drawImage: (...args) => { this.drawCalls.push(args); this.transformCalls.push(['drawImage', ...args]); },
       save: () => this.transformCalls.push(['save']),
       translate: (...args) => this.transformCalls.push(['translate', ...args]),
@@ -85,6 +90,7 @@ class MockCanvas {
     options.signal?.addEventListener('abort', () => listeners.delete(callback), { once: true });
   }
   setAttribute(name, value) { this.attributes.set(name, value); }
+  focus() { this.focused = true; }
   setPointerCapture(pointerId) { this.capturedPointers.add(pointerId); }
   hasPointerCapture(pointerId) { return this.capturedPointers.has(pointerId); }
   releasePointerCapture(pointerId) { this.capturedPointers.delete(pointerId); }
@@ -138,7 +144,7 @@ test('canvas viewport fits, displays actual size, zooms around a point, pans, an
   assert.equal(canvas.height, 800);
   assert.deepEqual(canvas.transforms.at(-1), [2, 0, 0, 2, 0, 0]);
   assert.equal(viewport.getState().zoom, 3);
-  assert.deepEqual(canvas.drawCalls.at(-1).slice(1), [-300, -150, 600, 300]);
+  assert.deepEqual(canvas.drawCalls.at(-1).slice(1), [-100, -50, 200, 100]);
   assert.equal(canvas.context.imageSmoothingQuality, 'high');
 
   viewport.actualSize();
@@ -214,9 +220,9 @@ test('canvas viewport fits, displays actual size, zooms around a point, pans, an
   flushFrames();
   assert.equal(viewport.getState().zoom, 2.5, 'quarter-turn fit uses swapped working dimensions');
   assert.deepEqual(viewport.getState().transform, { rotation: 90, flipHorizontal: true, flipVertical: false });
-  assert.deepEqual(canvas.transformCalls.slice(-6).map((call) => call[0]), ['save', 'translate', 'rotate', 'scale', 'drawImage', 'restore']);
-  assert.deepEqual(canvas.transformCalls.slice(-5, -2), [['translate', 600, 250], ['rotate', Math.PI / 2], ['scale', -1, 1]]);
-  assert.deepEqual(canvas.drawCalls.at(-1).slice(1), [-250, -125, 500, 250]);
+  assert.deepEqual(canvas.transformCalls.slice(-6).map((call) => call[0]), ['translate', 'scale', 'rotate', 'scale', 'drawImage', 'restore']);
+  assert.deepEqual(canvas.transformCalls.slice(-6, -3), [['translate', 600, 250], ['scale', 2.5, 2.5], ['rotate', Math.PI / 2]]);
+  assert.deepEqual(canvas.drawCalls.at(-1).slice(1), [-100, -50, 200, 100]);
 
   viewport.setImage(image);
   assert.deepEqual(viewport.getState().transform, { rotation: 0, flipHorizontal: false, flipVertical: false }, 'replacement resets transform state');
@@ -251,4 +257,56 @@ test('canvas viewport fits, displays actual size, zooms around a point, pans, an
   assert.equal(canvas.height, 0);
   assert.equal(canvas.events.get('wheel').size, 0);
 
+});
+
+test('crop mode previews, applies, cancels, resets, and clears crop on image replacement', () => {
+  const { canvas, flushFrames, viewport } = setup();
+  const applied = [];
+  const cancelled = [];
+  viewport.destroy();
+  const focused = new MockCanvas(canvas.parentElement);
+  const editor = createCanvasViewport(focused, { onCropApply: (crop) => applied.push(crop), onCropCancel: () => cancelled.push(true) });
+  editor.setImage({ naturalWidth: 300, naturalHeight: 200 });
+  assert.equal(editor.beginCrop(), true);
+  flushFrames();
+  assert.equal(editor.getState().cropMode, true);
+  assert.equal(focused.classes.has('is-crop-mode'), true);
+  assert.ok(focused.transformCalls.some((call) => call[0] === 'fillRect'), 'crop scrim is drawn');
+  focused.dispatch('keydown', { target: focused, key: 'ArrowLeft', shiftKey: true, preventDefault() {} });
+  focused.dispatch('keydown', { target: focused, key: 'Enter', preventDefault() {} });
+  flushFrames();
+  assert.equal(editor.getState().cropMode, false);
+  assert.deepEqual(applied[0], { x: 0, y: 0, width: 290, height: 200 });
+  assert.deepEqual(editor.getState().crop, applied[0]);
+  editor.setTransform({ rotation: 90, flipHorizontal: true });
+  flushFrames();
+  assert.ok(editor.getState().zoom > 0, 'cropped bounds remain fitted after transform');
+  editor.beginCrop();
+  focused.dispatch('keydown', { target: focused, key: 'Escape', preventDefault() {} });
+  assert.equal(editor.getState().cropMode, false);
+  assert.equal(cancelled.length, 1);
+  editor.resetCrop();
+  assert.equal(editor.getState().crop, null);
+  editor.setCrop({ x: 30, y: 20, width: 100, height: 80 });
+  editor.setImage({ naturalWidth: 100, naturalHeight: 80 });
+  assert.equal(editor.getState().crop, null);
+  editor.destroy();
+});
+
+test('crop pointer handles resize and interior drag remain within image bounds', () => {
+  const { canvas, flushFrames, viewport } = setup();
+  viewport.setImage({ naturalWidth: 300, naturalHeight: 200 });
+  viewport.beginCrop();
+  flushFrames();
+  const dispatchDrag = (id, from, to) => {
+    canvas.dispatch('pointerdown', { button: 0, pointerId: id, clientX: from.x + 10, clientY: from.y + 20, preventDefault() {} });
+    canvas.dispatch('pointermove', { pointerId: id, clientX: to.x + 10, clientY: to.y + 20, preventDefault() {} });
+    canvas.dispatch('pointerup', { pointerId: id });
+  };
+  dispatchDrag(1, { x: 600, y: 400 }, { x: 500, y: 300 });
+  assert.deepEqual(viewport.getState().draftCrop, { x: 0, y: 0, width: 250, height: 150 });
+  dispatchDrag(2, { x: 20, y: 20 }, { x: 1000, y: 1000 });
+  assert.deepEqual(viewport.getState().draftCrop, { x: 50, y: 50, width: 250, height: 150 });
+  viewport.cancelCrop();
+  viewport.destroy();
 });

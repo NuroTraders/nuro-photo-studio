@@ -1,6 +1,6 @@
 import { registerServiceWorker } from './bootstrap.js';
 import { renderDashboard } from './dashboard.js';
-import { renderFeatureScreen, updateEditorImageUI } from './feature-screens.js';
+import { renderFeatureScreen, updateEditorImageUI, updateEditorCropUI } from './feature-screens.js';
 import { navigationItems } from './navigation.js';
 import { loadImageFile, releaseLoadedImage, ImageImportError } from './editor/image-loader.js';
 import { createAppState } from './core/state.js';
@@ -23,6 +23,8 @@ let importSequence = 0;
 let activeScreen = 'home';
 let editorViewport = null;
 let activeTransform = { ...DEFAULT_TRANSFORM };
+let activeCrop = null;
+let cropMode = false;
 
 renderDashboard(dashboard);
 
@@ -80,6 +82,8 @@ dashboard.addEventListener('click', (event) => {
   if (viewportAction) runViewportAction(viewportAction);
   const transformAction = event.target.closest('[data-transform-action]')?.dataset.transformAction;
   if (transformAction) runTransformAction(transformAction);
+  const cropAction = event.target.closest('[data-crop-action]')?.dataset.cropAction;
+  if (cropAction) runCropAction(cropAction);
 });
 dashboard.addEventListener('input', (event) => {
   if (event.target.matches('[data-viewport-zoom]')) {
@@ -137,6 +141,8 @@ async function importImage(file) {
     const previousImage = activeImage;
     activeImage = loadedImage;
     activeTransform = { ...DEFAULT_TRANSFORM };
+    activeCrop = null;
+    cropMode = false;
     appState.setActiveDocument(loadedImage.document);
     if (activeScreen !== 'editor') navigateTo('editor');
     else if (editorViewport) {
@@ -167,6 +173,8 @@ function closeCurrentImage() {
   importSequence += 1;
   editorViewport?.setImage(null);
   activeTransform = { ...DEFAULT_TRANSFORM };
+  activeCrop = null;
+  cropMode = false;
   releaseLoadedImage(activeImage);
   activeImage = null;
   appState.setActiveDocument(null);
@@ -186,9 +194,13 @@ function renderEditorScreen() {
     emptyState: dashboard.querySelector('[data-canvas-empty-state]'),
     onZoomChange: updateZoomControls,
     onRotate: runTransformAction,
+    onCropApply: (crop) => { activeCrop = crop; cropMode = false; updateCropUI(); },
+    onCropCancel: () => { cropMode = false; updateCropUI(); },
   });
   editorViewport.setImage(activeImage?.image ?? null);
   editorViewport.setTransform(activeTransform);
+  if (activeCrop) editorViewport.setCrop(activeCrop);
+  updateCropUI();
 }
 
 function destroyEditorViewport() {
@@ -197,7 +209,7 @@ function destroyEditorViewport() {
 }
 
 function runViewportAction(action) {
-  if (!editorViewport) return;
+  if (!editorViewport || cropMode) return;
   if (action === 'zoom-in') editorViewport.zoomIn();
   else if (action === 'zoom-out') editorViewport.zoomOut();
   else if (action === 'fit') editorViewport.fitToScreen();
@@ -205,13 +217,28 @@ function runViewportAction(action) {
 }
 
 function runTransformAction(action) {
-  if (!activeImage || !editorViewport) return;
+  if (!activeImage || !editorViewport || cropMode) return;
   if (action === 'rotate-cw') activeTransform = rotateClockwise(activeTransform);
   else if (action === 'rotate-ccw') activeTransform = rotateCounterClockwise(activeTransform);
   else if (action === 'flip-horizontal') activeTransform = toggleFlipHorizontal(activeTransform);
   else if (action === 'flip-vertical') activeTransform = toggleFlipVertical(activeTransform);
   else return;
   editorViewport.setTransform(activeTransform);
+}
+
+function runCropAction(action) {
+  if (!activeImage || !editorViewport) return;
+  if (action === 'begin') cropMode = editorViewport.beginCrop();
+  else if (action === 'apply') { activeCrop = editorViewport.applyCrop(); cropMode = false; }
+  else if (action === 'cancel') { editorViewport.cancelCrop(); cropMode = false; }
+  else if (action === 'reset') { editorViewport.resetCrop(); activeCrop = null; cropMode = false; }
+  updateCropUI();
+}
+
+function updateCropUI() {
+  if (activeScreen === 'editor') updateEditorCropUI(dashboard, {
+    hasImage: Boolean(activeImage), cropMode, hasCrop: Boolean(activeCrop),
+  });
 }
 
 function updateZoomControls({ percent }) {
@@ -240,6 +267,12 @@ menuToggle.addEventListener('click', () => {
 });
 backdrop.addEventListener('click', closeMobileNavigation);
 document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && cropMode && activeScreen === 'editor') {
+    editorViewport?.cancelCrop();
+    cropMode = false;
+    updateCropUI();
+    return;
+  }
   if (!event.defaultPrevented && activeScreen === 'editor' && activeImage && event.key.toLowerCase() === 'r'
     && !event.ctrlKey && !event.altKey && !event.metaKey && !document.querySelector('dialog[open]')) {
     const workspace = dashboard.querySelector('.editor-workspace-panel');

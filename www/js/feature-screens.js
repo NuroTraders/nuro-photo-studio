@@ -77,7 +77,7 @@ export function updateEditorImageUI(container, image) {
     status.setAttribute('role', 'status');
   }
 
-  workspace.querySelectorAll('[data-viewport-action], [data-transform-action], [data-viewport-zoom]').forEach((control) => {
+  workspace.querySelectorAll('[data-viewport-action], [data-transform-action], [data-viewport-zoom], [data-crop-action]').forEach((control) => {
     control.disabled = !image;
   });
 
@@ -399,7 +399,7 @@ function createViewportControls(hasImage = false) {
   upcomingLabel.textContent = 'UPCOMING EDITING TOOLS';
   const tools = document.createElement('div');
   tools.className = 'tool-placeholder-list';
-  for (const tool of ['Crop', 'Adjust', 'Compare', 'Export']) {
+  for (const tool of ['Adjust', 'Compare', 'Export']) {
     const item = document.createElement('span');
     item.className = 'tool-placeholder';
     item.textContent = tool;
@@ -407,5 +407,31 @@ function createViewportControls(hasImage = false) {
   }
   upcoming.append(upcomingLabel, tools);
   controls.append(upcoming);
+
+  const cropToolbar = document.createElement('div');
+  cropToolbar.className = 'viewport-toolbar crop-toolbar';
+  cropToolbar.setAttribute('role', 'group');
+  cropToolbar.setAttribute('aria-label', 'Crop controls');
+  for (const [action, label] of [['begin', 'Crop'], ['apply', 'Apply crop'], ['cancel', 'Cancel crop'], ['reset', 'Reset crop']]) {
+    const button = createButton({ label, variant: action === 'apply' ? 'primary' : 'secondary', disabled: !hasImage });
+    button.setAttribute('aria-label', label);
+    button.dataset.cropAction = action;
+    button.hidden = action === 'apply' || action === 'cancel';
+    cropToolbar.append(button);
+  }
+  controls.append(cropToolbar);
   return controls;
+}
+
+export function updateEditorCropUI(container, { hasImage, cropMode, hasCrop }) {
+  const controls = container.querySelectorAll('[data-crop-action]');
+  controls.forEach((button) => {
+    const action = button.dataset.cropAction;
+    button.disabled = !hasImage;
+    button.hidden = (action === 'begin' && cropMode) || ((action === 'apply' || action === 'cancel') && !cropMode);
+    if (action === 'reset') button.disabled = !hasImage || (!hasCrop && !cropMode);
+  });
+  container.querySelectorAll('[data-transform-action], [data-viewport-action], [data-viewport-zoom]').forEach((control) => {
+    control.disabled = !hasImage || cropMode;
+  });
 }

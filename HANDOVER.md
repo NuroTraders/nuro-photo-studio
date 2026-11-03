@@ -1,9 +1,9 @@
 # Nuro Photo Studio — Handover
 
-**Current milestone:** Phase 2 — Task 4 Rotate & Flip implemented and ready for user review; Phase 1 Task 7 runtime checks remain open
+**Current milestone:** Phase 2 — Task 5 Crop Tool implemented and ready for user review; Phase 1 Task 7 runtime checks remain open
 **Specification baseline:** NPS-TS-001 v1.0 (draft engineering baseline)  
 **App version:** 0.1.0 (see Version history below)
-**State:** Local image loading, Canvas 2D viewing, and non-destructive quarter-turn rotation/flips are implemented. Task 4 automated checks pass and the Electron runtime path was manually verified with synthetic images. Browser runtime verification could not reach the local server in this environment. No crop, undo/redo, export, or AI behavior was added.
+**State:** Local image loading, Canvas 2D viewing, non-destructive quarter-turn rotation/flips, and crop preview/apply/reset are implemented. Task 5 automated checks pass. Runtime verification status is recorded below. No undo/redo, export changes, or AI behavior was added.
 
 ## What is here
 
@@ -17,6 +17,7 @@
 - Dedicated local image loader in `www/js/editor/image-loader.js`, retaining the original `File` data and returning the decoded image plus a releasable object URL.
 - Dedicated Canvas 2D viewport in `www/js/editor/viewport.js` with fit, actual-size, zoom and pan behavior; it draws the loader's decoded image without altering the source file.
 - Pure serializable transform state in `www/js/editor/transform-tool.js`, applied only during viewport rendering.
+- Pure crop geometry in `www/js/editor/crop-tool.js`; crop state maps between original image coordinates and the currently transformed visual coordinates.
 - Validation/build helper scripts and npm lockfile.
 
 ## Deliberate boundaries
@@ -36,6 +37,7 @@
 ## Version history
 
 - **0.1.0 (current; checked 2026-11-03)** — Phase 0 starter version retained through Phase 2 Task 4. Tasks 1–2 add local image import and Canvas 2D viewing; Task 4 adds non-destructive 90-degree rotation and horizontal/vertical flips. No task changed package version. No public GitHub Release/tag is recorded here.
+- **0.1.0 (2026-11-03)** — Retained for Phase 2 Task 5 Crop Tool; no package version change.
 
 ## Phase 1 task plan
 
@@ -49,11 +51,11 @@ Completed:
 6. **Responsive design and theme switching:** added early theme restoration from local storage before stylesheet paint, persistent toggle updates, touch target sizing, and narrow-screen safeguards for panels, dialogs and menus. Reduced-motion styles remain enabled.
 7. **Testing and stabilization:** build and structural validation pass; fixed two production asset path defects (theme initializer omitted from build and manifest/icon precache paths hashed by Vite). Static assets now live under `www/public/`. Runtime responsive, dialog, browser console, offline-cache and packaged Electron checks are still outstanding; do not declare Phase 1 complete until those checks are run.
 
-Phase 2 Tasks 1–3 are implemented; Tasks 2 and 3 are accepted. Task 4 is implemented and ready for review; do not begin Task 5 until Task 4 is accepted. Separately close the carried Phase 1 Task 7 runtime checks: narrow viewport behavior, live service-worker/offline behavior, and packaged Electron validation.
+Phase 2 Tasks 1–3 are implemented; Tasks 2, 3, and 4 are accepted. Task 5 Crop Tool is implemented and ready for user review; do not begin Task 6 until Task 5 is accepted. Separately close the carried Phase 1 Task 7 runtime checks: narrow viewport behavior, live service-worker/offline behavior, and packaged Electron validation.
 
 1. Define an image document that retains the original source and separates working state.
 2. Add validated import for JPG/JPEG, PNG and WebP; report unsupported files and size limits.
-3. Phase 2 Task 2 and Task 3 are accepted. Phase 2 Task 4 Rotate & Flip is implemented and ready for review. Keep future editing operations isolated from the viewport.
+3. Phase 2 Tasks 2–4 are accepted. Phase 2 Task 5 Crop is implemented and ready for review. Keep future editing operations isolated from the viewport.
 4. Add before/after comparison and safe export to PNG/JPEG/WebP without overwriting source.
 5. Add preview-resolution rendering and full-resolution export path; test large-image memory failures.
 6. Add interaction and integration checks for browser and Electron.
@@ -93,6 +95,37 @@ Transform composition uses source-local horizontal/vertical flips followed by qu
 ### Scope and next action
 
 No Crop, Undo/Redo, export changes, arbitrary-angle rotation, added dependency, telemetry, upload, or cloud processing was introduced. Keep package version unchanged. Request user review and acceptance of Task 4 before beginning Task 5 Crop.
+
+## Phase 2 Task 5 — Crop Tool
+
+**Status:** Implemented; ready for user review. Task 4 was accepted per the task brief. Package version remains `0.1.0`.
+
+### Changes
+
+- `www/js/editor/crop-tool.js` — added serializable crop geometry, minimum-size/bounds clamping, move/resize operations, and reversible mappings between source and rotated/flipped visual coordinates.
+- `www/js/editor/viewport.js` — added crop-mode draft state, eight resize handles, interior repositioning, scrim/border, keyboard handle adjustment, Enter/Escape, clipped rendering, fitted applied crops, cancel restoration, and reset. Source image/file data remain unchanged.
+- `www/js/app.js` — connects Crop, Apply, Cancel, and Reset controls; persists active crop across viewport transforms and resets it for replacement/close.
+- `www/js/feature-screens.js` and `www/styles.css` — added labeled semantic crop buttons with appropriate visibility/disabled states and crop cursor/focus styling; removed Crop from upcoming placeholders.
+- `scripts/test-crop.mjs` — added bounds, minimum-size, movement, resizing, and round-trip mapping tests for all quarter turns and flip combinations.
+- `scripts/test-viewport.mjs` — added rendering and apply/cancel/reset/replacement coverage.
+- `package.json` — includes the crop test suite; no dependencies added.
+- `docs/ARCHITECTURE.md`, `README.md`, and `HANDOVER.md` — document crop state and current milestone.
+
+Crop state is expressed in source image coordinates and mapped into the transformed visual coordinate space for crop editing. Crop preview clips the viewport draw; no pixels or source bytes are rewritten. Reset clears the crop and refits the full transformed image. No history stack or export behavior was added.
+
+### Validation and runtime evidence
+
+- `npm test` — passed, 16 tests / 16 passed / 0 failed, including crop mapping through 0°, 90°, 180°, and 270° with both flips, crop bounds/minimum size, pointer resize/reposition bounds, and apply/cancel/reset/replacement behavior.
+- `npm run check` — passed (`Project structure OK`, 17 required files).
+- `npm run build` — passed. Vite printed the existing informational warning that the static `theme-init.js` script cannot be bundled without `type="module"`.
+- `git diff --check` — passed; Git printed working-copy LF-to-CRLF notices.
+- Browser runtime on the local in-app browser at `http://127.0.0.1:5206/`: imported generated 320×200 four-color PNG; confirmed Crop enters mode and draws the dimmed overlay/eight handles; Escape canceled; keyboard handle adjustment followed by Enter applied a visibly fitted crop. Zoom in, clockwise rotation while cropped, Reset Crop, and Close image were exercised; close restored the empty workspace and disabled controls. A pointer drag was attempted, but no visible movement was confirmed through this browser automation surface, so native browser pointer-drag behavior remains covered by automated viewport event tests rather than claimed as manually verified. Minimum/bounds enforcement was checked in unit/event tests.
+- Electron dev runtime started against the same server/port, but the window rendered the outer Nuro shell with an empty navigation and main area; reloading did not populate the feature screen. Electron crop interaction could not be completed in this environment. Packaged Electron and physical high-DPI/touch hardware were not tested.
+- Synthetic fixture `crop-fixture.png` contained only four solid colors and was removed after verification. No user photo was used and no image data was uploaded.
+
+### Scope and next action
+
+No Undo/Redo, export changes, AI, external library, or version bump. Request user review and acceptance of Task 5 before beginning Task 6 Undo/Redo.
 
 ## Decisions and open items
 
