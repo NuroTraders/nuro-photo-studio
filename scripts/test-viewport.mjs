@@ -68,6 +68,9 @@ class MockCanvas {
       clip: () => this.transformCalls.push(['clip']),
       fillRect: (...args) => this.transformCalls.push(['fillRect', ...args]),
       strokeRect: (...args) => this.transformCalls.push(['strokeRect', ...args]),
+      moveTo: (...args) => this.transformCalls.push(['moveTo', ...args]),
+      lineTo: (...args) => this.transformCalls.push(['lineTo', ...args]),
+      stroke: () => this.transformCalls.push(['stroke']),
       drawImage: (...args) => { this.drawCalls.push(args); this.transformCalls.push(['drawImage', ...args]); },
       save: () => this.transformCalls.push(['save']),
       translate: (...args) => this.transformCalls.push(['translate', ...args]),
@@ -308,5 +311,18 @@ test('crop pointer handles resize and interior drag remain within image bounds',
   dispatchDrag(2, { x: 20, y: 20 }, { x: 1000, y: 1000 });
   assert.deepEqual(viewport.getState().draftCrop, { x: 50, y: 50, width: 250, height: 150 });
   viewport.cancelCrop();
+  viewport.destroy();
+});
+
+test('crop mode lets a drag draw a new box from a full-image selection', () => {
+  const { canvas, viewport } = setup();
+  viewport.setImage({ naturalWidth: 300, naturalHeight: 200 });
+  viewport.beginCrop();
+  canvas.dispatch('pointerdown', { button: 0, pointerId: 11, clientX: 110, clientY: 120, preventDefault() {} });
+  canvas.dispatch('pointermove', { pointerId: 11, clientX: 310, clientY: 270, preventDefault() {} });
+  assert.deepEqual(viewport.getState().draftCrop, { x: 50, y: 50, width: 100, height: 75 });
+  canvas.dispatch('pointerup', { pointerId: 11 });
+  viewport.applyCrop();
+  assert.deepEqual(viewport.getState().crop, { x: 50, y: 50, width: 100, height: 75 });
   viewport.destroy();
 });

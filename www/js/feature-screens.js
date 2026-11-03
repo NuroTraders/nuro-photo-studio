@@ -379,14 +379,16 @@ function createViewportControls(hasImage = false) {
   transformToolbar.className = 'viewport-toolbar transform-toolbar';
   transformToolbar.setAttribute('role', 'group');
   transformToolbar.setAttribute('aria-label', 'Image rotation and flip controls');
-  for (const [action, label] of [
-    ['rotate-ccw', 'Rotate counter-clockwise'],
-    ['rotate-cw', 'Rotate clockwise'],
-    ['flip-horizontal', 'Flip horizontal'],
-    ['flip-vertical', 'Flip vertical'],
+  for (const [action, label, title, paths] of [
+    ['rotate-ccw', 'Rotate 90° counter-clockwise (Shift+R)', 'Rotate counter-clockwise', ['M3.5 9a7 7 0 1 1 2.2 6.1', 'M3.5 3.5V9H9']],
+    ['rotate-cw', 'Rotate 90° clockwise (R)', 'Rotate clockwise', ['M16.5 9a7 7 0 1 0-2.2 6.1', 'M16.5 3.5V9H11']],
+    ['flip-horizontal', 'Flip horizontally', 'Flip horizontal', ['M10 3v14', 'M6 6 3 10l3 4', 'M14 6l3 4-3 4']],
+    ['flip-vertical', 'Flip vertically', 'Flip vertical', ['M3 10h14', 'M6 6 10 3l4 3', 'M6 14l4 3 4-3']],
   ]) {
-    const button = createButton({ label, variant: 'secondary', disabled: !hasImage });
+    const button = createButton({ label: '', variant: 'secondary', className: 'transform-icon-button', disabled: !hasImage });
     button.setAttribute('aria-label', label);
+    button.title = title;
+    button.append(createSvgIcon(paths));
     button.dataset.transformAction = action;
     transformToolbar.append(button);
   }
@@ -412,15 +414,43 @@ function createViewportControls(hasImage = false) {
   cropToolbar.className = 'viewport-toolbar crop-toolbar';
   cropToolbar.setAttribute('role', 'group');
   cropToolbar.setAttribute('aria-label', 'Crop controls');
-  for (const [action, label] of [['begin', 'Crop'], ['apply', 'Apply crop'], ['cancel', 'Cancel crop'], ['reset', 'Reset crop']]) {
-    const button = createButton({ label, variant: action === 'apply' ? 'primary' : 'secondary', disabled: !hasImage });
-    button.setAttribute('aria-label', label);
+  for (const [action, label, ariaLabel, icon] of [
+    ['begin', 'Crop', 'Crop', null],
+    ['apply', '✓ Apply', 'Apply crop', ['M4 10.5 8.2 14.5 16 5.5']],
+    ['cancel', 'Cancel', 'Cancel crop', null],
+    ['reset', 'Reset', 'Reset crop', null],
+  ]) {
+    const button = createButton({ label, variant: action === 'apply' ? 'primary' : 'secondary', className: 'crop-action-button', disabled: !hasImage });
+    button.setAttribute('aria-label', ariaLabel);
+    button.title = ariaLabel;
+    if (icon) { button.replaceChildren(createSvgIcon(icon)); button.append(document.createTextNode(' Apply')); }
     button.dataset.cropAction = action;
     button.hidden = action === 'apply' || action === 'cancel';
     cropToolbar.append(button);
   }
   controls.append(cropToolbar);
   return controls;
+}
+
+function createSvgIcon(paths) {
+  const namespace = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(namespace, 'svg');
+  svg.setAttribute('viewBox', '0 0 20 20');
+  svg.setAttribute('width', '20');
+  svg.setAttribute('height', '20');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  for (const definition of paths) {
+    const path = document.createElementNS(namespace, 'path');
+    path.setAttribute('d', definition);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', 'currentColor');
+    path.setAttribute('stroke-width', '1.8');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    svg.append(path);
+  }
+  return svg;
 }
 
 export function updateEditorCropUI(container, { hasImage, cropMode, hasCrop }) {

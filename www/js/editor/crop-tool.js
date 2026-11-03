@@ -28,6 +28,28 @@ export function moveCropRect(rect, deltaX, deltaY, bounds) {
   };
 }
 
+/** Create a clamped crop rectangle from two visual-space drag points. */
+export function createCropFromPoints(start, current, bounds, minimum = MIN_CROP_SIZE) {
+  const x1 = clamp(start.x, 0, bounds.width), y1 = clamp(start.y, 0, bounds.height);
+  const x2 = clamp(current.x, 0, bounds.width), y2 = clamp(current.y, 0, bounds.height);
+  let left = Math.min(x1, x2), right = Math.max(x1, x2);
+  let top = Math.min(y1, y2), bottom = Math.max(y1, y2);
+  const minWidth = Math.min(minimum, bounds.width), minHeight = Math.min(minimum, bounds.height);
+  if (right - left < minWidth) {
+    if (x2 >= x1) right = left + minWidth;
+    else left = right - minWidth;
+    if (left < 0) { right -= left; left = 0; }
+    if (right > bounds.width) { left -= right - bounds.width; right = bounds.width; }
+  }
+  if (bottom - top < minHeight) {
+    if (y2 >= y1) bottom = top + minHeight;
+    else top = bottom - minHeight;
+    if (top < 0) { bottom -= top; top = 0; }
+    if (bottom > bounds.height) { top -= bottom - bounds.height; bottom = bounds.height; }
+  }
+  return { x: left, y: top, width: right - left, height: bottom - top };
+}
+
 /** Resize a rectangle from one of n, ne, e, se, s, sw, w, nw handles. */
 export function resizeCropRect(rect, handle, deltaX, deltaY, bounds, minimum = MIN_CROP_SIZE) {
   const safe = clampCropRect(rect, bounds, minimum);

@@ -396,12 +396,22 @@ button.quick-action-card:hover { transform: translateY(-2px); border-color: var(
 .canvas-viewport-empty[hidden] { display: none; }
 .canvas-viewport-canvas.is-panning { cursor: grabbing; }
 .canvas-viewport-canvas.is-crop-mode { cursor: crosshair; }
+.canvas-viewport-canvas.is-crop-move { cursor: move; }
+.canvas-viewport-canvas.is-crop-nw, .canvas-viewport-canvas.is-crop-se { cursor: nwse-resize; }
+.canvas-viewport-canvas.is-crop-ne, .canvas-viewport-canvas.is-crop-sw { cursor: nesw-resize; }
+.canvas-viewport-canvas.is-crop-e, .canvas-viewport-canvas.is-crop-w { cursor: ew-resize; }
+.canvas-viewport-canvas.is-crop-n, .canvas-viewport-canvas.is-crop-s { cursor: ns-resize; }
 .canvas-viewport-canvas:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -3px; }
 .canvas-viewport-empty { position: absolute; inset: 0; max-width: none; }
 .viewport-controls { display: grid; gap: 20px; }
 .viewport-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
-.crop-toolbar { padding-top: 2px; }
+.transform-toolbar { gap: 7px; }
+.transform-icon-button { width: 40px; min-width: 40px; height: 40px; min-height: 40px; padding: 0; border-radius: 11px; }
+.transform-icon-button svg, .crop-action-button svg { display: block; width: 20px; height: 20px; }
+.crop-toolbar { width: fit-content; max-width: 100%; gap: 5px; padding: 5px; border: 1px solid var(--color-border); border-radius: var(--radius-pill); background: var(--color-surface-raised); box-shadow: var(--shadow-card); }
 .crop-toolbar [hidden] { display: none; }
+.crop-action-button { min-height: 34px; padding: 7px 12px; border-radius: var(--radius-pill); }
+.crop-action-button svg { width: 17px; height: 17px; }
 .viewport-step-button { width: 42px; min-width: 42px; padding: 8px; font-size: var(--text-md); }
 .viewport-zoom-slider { width: clamp(110px, 18vw, 220px); min-height: 38px; accent-color: var(--color-primary); cursor: pointer; }
 .viewport-zoom-label { min-width: 4.5ch; color: var(--color-text); font-size: var(--text-xs); font-variant-numeric: tabular-nums; text-align: center; }

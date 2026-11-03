@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  clampCropRect, createFullCrop, mapCropRectToSource, mapCropRectToVisual,
+  clampCropRect, createCropFromPoints, createFullCrop, mapCropRectToSource, mapCropRectToVisual,
   moveCropRect, resizeCropRect,
 } from '../www/js/editor/crop-tool.js';
 
@@ -27,4 +27,10 @@ test('crop mappings round-trip through quarter turns and flips', () => {
   }
   const rotated = mapCropRectToVisual(source, bounds.width, bounds.height, { rotation: 90 });
   assert.deepEqual(rotated, { x: 100, y: 31, width: 77, height: 111 });
+});
+
+test('drag selection normalizes direction, enforces minimum size, and clamps to image edges', () => {
+  assert.deepEqual(createCropFromPoints({ x: 150, y: 125 }, { x: 50, y: 50 }, bounds), { x: 50, y: 50, width: 100, height: 75 });
+  assert.deepEqual(createCropFromPoints({ x: 298, y: 198 }, { x: 500, y: 500 }, bounds), { x: 280, y: 180, width: 20, height: 20 });
+  assert.deepEqual(createCropFromPoints({ x: 10, y: 10 }, { x: 12, y: 14 }, bounds), { x: 10, y: 10, width: 20, height: 20 });
 });

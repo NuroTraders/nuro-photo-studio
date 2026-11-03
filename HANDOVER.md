@@ -1,9 +1,9 @@
 # Nuro Photo Studio — Handover
 
-**Current milestone:** Phase 2 — Task 5 Crop Tool implemented and ready for user review; Phase 1 Task 7 runtime checks remain open
+**Current milestone:** Phase 2 — Tasks 4 & 5 UI refinements implemented and ready for user review; Phase 1 Task 7 runtime checks remain open
 **Specification baseline:** NPS-TS-001 v1.0 (draft engineering baseline)  
 **App version:** 0.1.0 (see Version history below)
-**State:** Local image loading, Canvas 2D viewing, non-destructive quarter-turn rotation/flips, and crop preview/apply/reset are implemented. Task 5 automated checks pass. Runtime verification status is recorded below. No undo/redo, export changes, or AI behavior was added.
+**State:** Local image loading, Canvas 2D viewing, non-destructive quarter-turn rotation/flips, and crop preview/apply/reset with drag-to-draw are implemented. Automated checks pass. Runtime verification status is recorded below. No undo/redo, export changes, or AI behavior was added.
 
 ## What is here
 
@@ -64,7 +64,7 @@ Keep UI components thin. Image algorithms belong in `editor/` or `processing/`, 
 
 ## Phase 2 Task 4 — Rotate & Flip
 
-**Status:** Implemented; ready for user review. Package version remains `0.1.0`.
+**Status:** Accepted by the user per the Phase 2 Task 5 brief. Package version remains `0.1.0`.
 
 ### Changes
 
@@ -94,7 +94,7 @@ Transform composition uses source-local horizontal/vertical flips followed by qu
 
 ### Scope and next action
 
-No Crop, Undo/Redo, export changes, arbitrary-angle rotation, added dependency, telemetry, upload, or cloud processing was introduced. Keep package version unchanged. Request user review and acceptance of Task 4 before beginning Task 5 Crop.
+At the time of the original Task 4 handoff, the next action was user review before Task 5 Crop. The user later reported Task 4 accepted in the Task 5 brief; the subsequent Task 4/5 refinements are tracked below.
 
 ## Phase 2 Task 5 — Crop Tool
 
@@ -126,6 +126,27 @@ Crop state is expressed in source image coordinates and mapped into the transfor
 ### Scope and next action
 
 No Undo/Redo, export changes, AI, external library, or version bump. Request user review and acceptance of Task 5 before beginning Task 6 Undo/Redo.
+
+## Phase 2 Tasks 4 & 5 UI Refinements
+
+**Status:** Implemented; ready for user review. App version remains `0.1.0`.
+
+### Changes
+
+- `www/js/feature-screens.js` — replaced full-text Rotate/Flip controls with compact 40px inline SVG buttons; retained descriptive `aria-label`, `title`, disabled states, and the existing `R` / `Shift+R` shortcuts. Added a compact pill crop action bar with Apply, Cancel, and Reset labels.
+- `www/js/editor/viewport.js` — changed the crop frame to a light 1.5px border, subtle thirds grid, L-shaped corner brackets, thin edge grips, and a 65% dark scrim. Added crop cursor feedback for drawing, moving, and each resize direction. Dragging on a full-image selection or outside an existing crop draws a new selection; existing handles resize and the interior moves the selection.
+- `www/js/editor/crop-tool.js` — added normalized drag-to-create geometry with minimum-size and strict image-bound clamping.
+- `www/styles.css` — added compact transform icon sizing, pill-bar styling, crop cursor states, and the modernized action-button layout.
+- `scripts/test-crop.mjs` and `scripts/test-viewport.mjs` — added drag selection direction/minimum/edge cases and viewport draw-to-crop interaction coverage; retained transform and crop behavior tests.
+
+### Validation
+
+- `npm test` — passed, 18 tests / 18 passed / 0 failed.
+- `npm run check` — pending final run.
+- `npm run build` — pending final run; existing informational `theme-init.js` warning may appear.
+- `git diff --check` — pending final run.
+
+No source image mutation, external library, version bump, Undo/Redo, or export behavior was introduced. Do not begin Task 6 until the user approves these refinements and Task 5.
 
 ## Decisions and open items
 

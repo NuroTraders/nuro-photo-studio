@@ -1,7 +1,7 @@
 import { DEFAULT_TRANSFORM, getTransformedDimensions, normalizeTransform } from './transform-tool.js';
 import {
   clampCropRect, createFullCrop, mapCropRectToSource, mapCropRectToVisual,
-  moveCropRect, resizeCropRect,
+  createCropFromPoints, moveCropRect, resizeCropRect,
 } from './crop-tool.js';
 
 const MIN_ZOOM = 0.01;
@@ -353,20 +353,26 @@ export function createCanvasViewport(canvas, {
     context.save();
     try {
       context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-      context.fillStyle = 'rgba(0, 0, 0, 0.56)';
+      context.fillStyle = 'rgba(0, 0, 0, 0.65)';
       context.fillRect(0, 0, width, Math.max(0, box.y));
       context.fillRect(0, bottom, width, Math.max(0, height - bottom));
       context.fillRect(0, box.y, Math.max(0, box.x), box.height);
       context.fillRect(right, box.y, Math.max(0, width - right), box.height);
-      context.strokeStyle = '#ffffff';
-      context.lineWidth = 2;
+      context.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+      context.lineWidth = 1.5;
       context.strokeRect(box.x, box.y, box.width, box.height);
-      context.fillStyle = '#172027';
-      for (const point of cropHandlePoints(box)) {
-        const half = CROP_HANDLE_SIZE / 2;
-        context.fillRect(point.x - half, point.y - half, CROP_HANDLE_SIZE, CROP_HANDLE_SIZE);
-        context.strokeRect(point.x - half, point.y - half, CROP_HANDLE_SIZE, CROP_HANDLE_SIZE);
+      context.save();
+      context.beginPath();
+      context.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+      context.lineWidth = 1;
+      for (const fraction of [1 / 3, 2 / 3]) {
+        const x = box.x + box.width * fraction, y = box.y + box.height * fraction;
+        context.moveTo(x, box.y); context.lineTo(x, bottom);
+        context.moveTo(box.x, y); context.lineTo(right, y);
       }
+      context.stroke();
+      context.restore();
+      drawCropGrips(context, box);
     } finally {
       context.restore();
     }
@@ -394,8 +400,15 @@ export function createCanvasViewport(canvas, {
       const point = canvasPoint(event);
       const box = cropScreenBox();
       const handle = hitCropHandle(point, box);
-      cropDrag = { pointerId: event.pointerId, x: point.x, y: point.y, start: { ...draftCrop }, handle: handle || (insideCrop(point, box) ? 'move' : null) };
-      if (!cropDrag.handle) { cropDrag = null; return; }
+      const isFull = draftCrop.x <= 0.0001 && draftCrop.y <= 0.0001
+        && Math.abs(draftCrop.width - getTransformedDimensions(image.naturalWidth, image.naturalHeight, transform).width) <= 0.0001
+        && Math.abs(draftCrop.height - getTransformedDimensions(image.naturalWidth, image.naturalHeight, transform).height) <= 0.0001;
+      const cropPoint = screenToCropPoint(point);
+      const mode = handle ? 'resize' : insideCrop(point, box) && !isFull ? 'move' : 'draw';
+      cropDrag = {
+        pointerId: event.pointerId, x: point.x, y: point.y, start: { ...draftCrop },
+        anchor: cropPoint, handle: handle || 'se', mode,
+      };
       canvas.setPointerCapture(event.pointerId);
       return;
     }
@@ -405,15 +418,23 @@ export function createCanvasViewport(canvas, {
   }
 
   function handlePointerMove(event) {
+    if (cropMode && !cropDrag) {
+      updateCropCursor(canvasPoint(event));
+      return;
+    }
     if (cropMode && cropDrag?.pointerId === event.pointerId) {
       event.preventDefault();
       const point = canvasPoint(event);
-      const dx = (point.x - cropDrag.x) / zoom;
-      const dy = (point.y - cropDrag.y) / zoom;
       const bounds = getTransformedDimensions(image.naturalWidth, image.naturalHeight, transform);
-      draftCrop = cropDrag.handle === 'move'
-        ? moveCropRect(cropDrag.start, dx, dy, bounds)
-        : resizeCropRect(cropDrag.start, cropDrag.handle, dx, dy, bounds);
+      if (cropDrag.mode === 'draw') {
+        draftCrop = createCropFromPoints(cropDrag.anchor, screenToCropPoint(point), bounds);
+      } else {
+        const dx = (point.x - cropDrag.x) / zoom;
+        const dy = (point.y - cropDrag.y) / zoom;
+        draftCrop = cropDrag.mode === 'move'
+          ? moveCropRect(cropDrag.start, dx, dy, bounds)
+          : resizeCropRect(cropDrag.start, cropDrag.handle, dx, dy, bounds);
+      }
       scheduleRender();
       return;
     }
@@ -537,6 +558,28 @@ export function createCanvasViewport(canvas, {
     const y = (height - bounds.height * zoom) / 2 + panY + draftCrop.y * zoom;
     return { x, y, width: draftCrop.width * zoom, height: draftCrop.height * zoom };
   }
+
+  function screenToCropPoint(point) {
+    const bounds = getTransformedDimensions(image.naturalWidth, image.naturalHeight, transform);
+    const left = (width - bounds.width * zoom) / 2 + panX;
+    const top = (height - bounds.height * zoom) / 2 + panY;
+    return {
+      x: clamp((point.x - left) / zoom, 0, bounds.width),
+      y: clamp((point.y - top) / zoom, 0, bounds.height),
+    };
+  }
+
+  function updateCropCursor(point) {
+    for (const name of [...CROP_HANDLES.map((handle) => `is-crop-${handle}`), 'is-crop-move']) canvas.classList.remove(name);
+    const box = cropScreenBox();
+    const handle = hitCropHandle(point, box);
+    const bounds = getTransformedDimensions(image.naturalWidth, image.naturalHeight, transform);
+    const isFull = draftCrop.x <= 0.0001 && draftCrop.y <= 0.0001
+      && Math.abs(draftCrop.width - bounds.width) <= 0.0001
+      && Math.abs(draftCrop.height - bounds.height) <= 0.0001;
+    if (handle) canvas.classList.add(`is-crop-${handle}`);
+    else if (insideCrop(point, box) && !isFull) canvas.classList.add('is-crop-move');
+  }
 }
 
 function cropHandlePoints(box) {
@@ -554,6 +597,31 @@ function hitCropHandle(point, box) {
 }
 
 function insideCrop(point, box) { return point.x >= box.x && point.x <= box.x + box.width && point.y >= box.y && point.y <= box.y + box.height; }
+
+function drawCropGrips(context, box) {
+  const { x, y, width, height } = box;
+  const right = x + width, bottom = y + height;
+  const midX = x + width / 2, midY = y + height / 2;
+  const length = Math.min(16, width / 4, height / 4);
+  context.save();
+  context.strokeStyle = '#ffffff';
+  context.lineWidth = 2;
+  context.lineCap = 'square';
+  context.beginPath();
+  for (const [cx, cy, sx, sy] of [[x, y, 1, 1], [right, y, -1, 1], [right, bottom, -1, -1], [x, bottom, 1, -1]]) {
+    context.moveTo(cx, cy + sy * length); context.lineTo(cx, cy); context.lineTo(cx + sx * length, cy);
+  }
+  context.stroke();
+  context.lineWidth = 2.5;
+  context.lineCap = 'round';
+  context.beginPath();
+  context.moveTo(midX - 9, y); context.lineTo(midX + 9, y);
+  context.moveTo(midX - 9, bottom); context.lineTo(midX + 9, bottom);
+  context.moveTo(x, midY - 9); context.lineTo(x, midY + 9);
+  context.moveTo(right, midY - 9); context.lineTo(right, midY + 9);
+  context.stroke();
+  context.restore();
+}
 
 function midpointOf(a, b) {
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
