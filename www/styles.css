@@ -387,13 +387,13 @@ button.quick-action-card:hover { transform: translateY(-2px); border-color: var(
 .feature-screen-home { margin-top: 22px; }
 .feature-panel .ui-empty-state { min-height: 150px; padding: 18px; }
 .feature-panel .ui-empty-state p { margin-bottom: 0; }
-.editor-screen-grid { grid-template-columns: minmax(0, 1fr) 280px; grid-template-rows: minmax(340px, 1fr) auto; grid-template-areas: "workspace properties" "toolbar properties"; }
+.editor-screen-grid { grid-template-columns: minmax(0, 1fr) 280px; grid-template-rows: auto; grid-template-areas: "workspace properties"; }
 .editor-workspace-panel { grid-area: workspace; }
-.editor-toolbar-panel { grid-area: toolbar; }
 .editor-properties-panel { grid-area: properties; }
 .canvas-viewport-stage { position: relative; width: 100%; height: clamp(280px, 60vh, 680px); min-height: 280px; overflow: hidden; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background-color: var(--color-surface-inset); background-image: linear-gradient(45deg,var(--color-bg-subtle) 25%,transparent 25%),linear-gradient(-45deg,var(--color-bg-subtle) 25%,transparent 25%),linear-gradient(45deg,transparent 75%,var(--color-bg-subtle) 75%),linear-gradient(-45deg,transparent 75%,var(--color-bg-subtle) 75%); background-position: 0 0,0 11px,11px -11px,-11px 0; background-size: 22px 22px; }
 .canvas-viewport-canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
 .canvas-viewport-canvas[hidden] { display: none; }
+.canvas-viewport-empty[hidden] { display: none; }
 .canvas-viewport-canvas.is-panning { cursor: grabbing; }
 .canvas-viewport-canvas:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -3px; }
 .canvas-viewport-empty { position: absolute; inset: 0; max-width: none; }
@@ -442,7 +442,7 @@ button.quick-action-card:hover { transform: translateY(-2px); border-color: var(
 .about-info { display: grid; gap: 12px; }
 
 @media (max-width: 800px) {
-  .editor-screen-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; grid-template-areas: "workspace" "toolbar" "properties"; }
+  .editor-screen-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; grid-template-areas: "workspace" "properties"; }
   .canvas-viewport-stage { height: clamp(280px, 55vh, 560px); }
   .batch-screen-grid, .models-screen-grid { grid-template-columns: minmax(0, 1fr); }
   .batch-queue-panel, .model-list-panel { grid-row: auto; }

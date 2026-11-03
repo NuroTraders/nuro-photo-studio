@@ -75,7 +75,8 @@ function setup() {
   };
   const canvas = new MockCanvas(host);
   const zoomUpdates = [];
-  const viewport = createCanvasViewport(canvas, { onZoomChange: (state) => zoomUpdates.push(state) });
+  const emptyState = { hidden: false };
+  const viewport = createCanvasViewport(canvas, { emptyState, onZoomChange: (state) => zoomUpdates.push(state) });
   const flushFrames = () => {
     while (pendingFrames.size) {
       const [id, callback] = pendingFrames.entries().next().value;
@@ -83,16 +84,17 @@ function setup() {
       callback();
     }
   };
-  return { canvas, dimensions, flushFrames, host, viewport, zoomUpdates };
+  return { canvas, dimensions, emptyState, flushFrames, host, viewport, zoomUpdates };
 }
 
 test('canvas viewport fits, displays actual size, zooms around a point, pans, and clears', () => {
-  const { canvas, dimensions, flushFrames, viewport, zoomUpdates } = setup();
+  const { canvas, dimensions, emptyState, flushFrames, viewport, zoomUpdates } = setup();
   const image = { naturalWidth: 200, naturalHeight: 100, alt: 'Test image' };
   viewport.setImage(image);
   flushFrames();
 
   assert.equal(canvas.hidden, false);
+  assert.equal(emptyState.hidden, true);
   assert.equal(canvas.width, 1200);
   assert.equal(canvas.height, 800);
   assert.equal(viewport.getState().zoom, 3);
@@ -143,6 +145,7 @@ test('canvas viewport fits, displays actual size, zooms around a point, pans, an
   viewport.setImage(null);
   flushFrames();
   assert.equal(canvas.hidden, true);
+  assert.equal(emptyState.hidden, false);
   assert.equal(canvas.drawCalls.length, drawCount);
   assert.ok(canvas.clearCalls.length > 0);
   viewport.destroy();

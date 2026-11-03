@@ -4,7 +4,7 @@ const ZOOM_STEP = 1.2;
 const MAX_DEVICE_PIXEL_RATIO = 2;
 
 /** Draws a decoded source image into a viewport-sized canvas; it never writes to the source. */
-export function createCanvasViewport(canvas, { onZoomChange = () => {} } = {}) {
+export function createCanvasViewport(canvas, { emptyState = null, onZoomChange = () => {} } = {}) {
   const host = canvas.parentElement;
   const context = canvas.getContext('2d', { alpha: true, desynchronized: true });
   if (!host || !context) throw new Error('A canvas viewport needs a mounted canvas with a 2D context.');
@@ -42,6 +42,7 @@ export function createCanvasViewport(canvas, { onZoomChange = () => {} } = {}) {
     setImage(nextImage) {
       image = nextImage && nextImage.naturalWidth > 0 && nextImage.naturalHeight > 0 ? nextImage : null;
       canvas.hidden = !image;
+      if (emptyState) emptyState.hidden = Boolean(image);
       host.classList.toggle('has-image', Boolean(image));
       canvas.setAttribute('aria-label', image
         ? `Image viewport displaying ${image.alt || 'the imported image'}. Use the zoom controls to inspect it.`

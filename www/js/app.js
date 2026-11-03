@@ -1,6 +1,6 @@
 import { registerServiceWorker } from './bootstrap.js';
 import { renderDashboard } from './dashboard.js';
-import { renderFeatureScreen } from './feature-screens.js';
+import { renderFeatureScreen, updateEditorImageUI } from './feature-screens.js';
 import { navigationItems } from './navigation.js';
 import { loadImageFile, releaseLoadedImage, ImageImportError } from './editor/image-loader.js';
 import { createAppState } from './core/state.js';
@@ -131,7 +131,10 @@ async function importImage(file) {
     activeImage = loadedImage;
     appState.setActiveDocument(loadedImage.document);
     if (activeScreen !== 'editor') navigateTo('editor');
-    else renderEditorScreen();
+    else if (editorViewport) {
+      editorViewport.setImage(loadedImage.image);
+      updateEditorImageUI(dashboard, loadedImage);
+    } else renderEditorScreen();
     releaseLoadedImage(previousImage);
   } catch (error) {
     if (sequence !== importSequence) return;
@@ -153,11 +156,11 @@ function setImportStatus(message, isError = false) {
 
 function closeCurrentImage() {
   importSequence += 1;
-  destroyEditorViewport();
+  editorViewport?.setImage(null);
   releaseLoadedImage(activeImage);
   activeImage = null;
   appState.setActiveDocument(null);
-  renderEditorScreen();
+  if (!updateEditorImageUI(dashboard, null)) renderEditorScreen();
   dashboard.querySelector('[data-open-image]')?.focus();
 }
 
@@ -169,7 +172,10 @@ function renderEditorScreen() {
   });
   const canvas = dashboard.querySelector('[data-canvas-viewport]');
   if (!canvas) return;
-  editorViewport = createCanvasViewport(canvas, { onZoomChange: updateZoomControls });
+  editorViewport = createCanvasViewport(canvas, {
+    emptyState: dashboard.querySelector('[data-canvas-empty-state]'),
+    onZoomChange: updateZoomControls,
+  });
   editorViewport.setImage(activeImage?.image ?? null);
 }
 

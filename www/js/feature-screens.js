@@ -49,6 +49,43 @@ export function renderFeatureScreen(container, screenId, options = {}) {
   return true;
 }
 
+export function updateEditorImageUI(container, image) {
+  const workspace = container.querySelector('.editor-workspace-panel');
+  if (!workspace) return false;
+
+  const badge = workspace.querySelector('[data-editor-image-badge]');
+  if (badge) badge.textContent = image ? 'IMAGE READY' : 'LOCAL IMAGE';
+
+  const openButton = workspace.querySelector('[data-open-image]');
+  const actions = workspace.querySelector('.editor-import-actions');
+  if (openButton) openButton.textContent = image ? 'Replace image' : 'Open Image';
+  let closeButton = workspace.querySelector('[data-close-image]');
+  if (image && !closeButton && actions) {
+    closeButton = createButton({ label: 'Close image', variant: 'secondary' });
+    closeButton.dataset.closeImage = 'true';
+    actions.append(closeButton);
+  } else if (!image && closeButton) {
+    closeButton.remove();
+  }
+
+  const status = workspace.querySelector('[data-import-status]');
+  if (status) {
+    status.textContent = image
+      ? 'Original file remains unchanged on this device.'
+      : 'Files stay on this device. Nothing is uploaded.';
+    status.classList.remove('is-error');
+    status.setAttribute('role', 'status');
+  }
+
+  workspace.querySelectorAll('[data-viewport-action], [data-viewport-zoom]').forEach((control) => {
+    control.disabled = !image;
+  });
+
+  const properties = container.querySelector('.editor-properties-panel');
+  properties?.replaceWith(createEditorProperties(image?.document));
+  return true;
+}
+
 function createEditorWorkspace({ image, onOpenImage } = {}) {
   const panel = createCard({ tag: 'section', className: 'feature-panel editor-workspace-panel' });
   panel.setAttribute('aria-labelledby', 'panel-image-workspace');
@@ -64,7 +101,9 @@ function createEditorWorkspace({ image, onOpenImage } = {}) {
   title.id = 'panel-image-workspace';
   title.textContent = 'Image workspace';
   titleGroup.append(eyebrow, title);
-  header.append(titleGroup, createBadge({ label: image ? 'IMAGE READY' : 'LOCAL IMAGE' }));
+  const imageBadge = createBadge({ label: image ? 'IMAGE READY' : 'LOCAL IMAGE' });
+  imageBadge.dataset.editorImageBadge = 'true';
+  header.append(titleGroup, imageBadge);
 
   const canvas = document.createElement('div');
   canvas.className = 'canvas-viewport-stage';
@@ -75,7 +114,7 @@ function createEditorWorkspace({ image, onOpenImage } = {}) {
   canvasElement.hidden = true;
   const empty = placeholder({ icon: '▧', title: 'Your workspace is empty', description: 'Choose a JPG, PNG, or WebP image, or drag one into this workspace.' });
   empty.classList.add('canvas-viewport-empty');
-  empty.hidden = Boolean(image);
+  empty.dataset.canvasEmptyState = 'true';
   canvas.append(canvasElement, empty);
 
   const fileInput = document.createElement('input');
@@ -107,7 +146,7 @@ function createEditorWorkspace({ image, onOpenImage } = {}) {
   status.setAttribute('aria-live', 'polite');
   status.textContent = image ? 'Original file remains unchanged on this device.' : 'Files stay on this device. Nothing is uploaded.';
 
-  panel.append(header, canvas, fileInput, actions, status);
+  panel.append(header, canvas, createViewportControls(Boolean(image)), fileInput, actions, status);
   return panel;
 }
 
@@ -232,7 +271,6 @@ const screenLayouts = {
     className: 'editor-screen-grid',
     panels: [
       { title: 'Image workspace' },
-      { title: 'Canvas viewport', eyebrow: 'VIEW CONTROLS', className: 'editor-toolbar-panel', badge: 'READY', content: createViewportControls },
       { title: 'Properties' },
     ],
   },
@@ -301,7 +339,7 @@ const screenLayouts = {
   },
 };
 
-function createViewportControls() {
+function createViewportControls(hasImage = false) {
   const controls = document.createElement('div');
   controls.className = 'viewport-controls';
   const toolbar = document.createElement('div');
@@ -309,7 +347,7 @@ function createViewportControls() {
   toolbar.setAttribute('role', 'group');
   toolbar.setAttribute('aria-label', 'Canvas zoom controls');
 
-  const zoomOut = createButton({ label: '−', variant: 'secondary', className: 'viewport-step-button' });
+  const zoomOut = createButton({ label: '−', variant: 'secondary', className: 'viewport-step-button', disabled: !hasImage });
   zoomOut.setAttribute('aria-label', 'Zoom out');
   zoomOut.dataset.viewportAction = 'zoom-out';
   const slider = document.createElement('input');
@@ -319,6 +357,7 @@ function createViewportControls() {
   slider.max = '800';
   slider.step = '1';
   slider.value = '100';
+  slider.disabled = !hasImage;
   slider.setAttribute('aria-label', 'Zoom level');
   slider.dataset.viewportZoom = 'true';
   const zoomLabel = document.createElement('output');
@@ -326,12 +365,12 @@ function createViewportControls() {
   zoomLabel.dataset.viewportZoomLabel = 'true';
   zoomLabel.setAttribute('aria-live', 'polite');
   zoomLabel.textContent = '100%';
-  const zoomIn = createButton({ label: '+', variant: 'secondary', className: 'viewport-step-button' });
+  const zoomIn = createButton({ label: '+', variant: 'secondary', className: 'viewport-step-button', disabled: !hasImage });
   zoomIn.setAttribute('aria-label', 'Zoom in');
   zoomIn.dataset.viewportAction = 'zoom-in';
-  const fit = createButton({ label: 'Fit to screen', variant: 'secondary' });
+  const fit = createButton({ label: 'Fit to screen', variant: 'secondary', disabled: !hasImage });
   fit.dataset.viewportAction = 'fit';
-  const actual = createButton({ label: 'Actual size', variant: 'secondary' });
+  const actual = createButton({ label: 'Actual size', variant: 'secondary', disabled: !hasImage });
   actual.dataset.viewportAction = 'actual-size';
   toolbar.append(zoomOut, slider, zoomLabel, zoomIn, fit, actual);
   controls.append(toolbar);
