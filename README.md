@@ -18,7 +18,7 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. The app includes a responsive dashboard, theme switch, navigation, and shared UI components. In Photo Editor, open a local JPG/JPEG, PNG or WebP image, or drop one into the workspace. The canvas supports fit-to-screen, actual size, zoom controls, wheel zoom, drag panning, 90-degree rotation, horizontal/vertical flips, and non-destructive crop with drag-to-draw, aspect presets, and pixel dimension controls. Imports are limited to 100 MB, 80 megapixels and 20,000 pixels per side. The image remains on-device and its original file is held unchanged; project saving, undo/redo, and export are not yet available.
+Open the local URL printed by Vite. The app includes a responsive dashboard, theme switch, navigation, and shared UI components. In Photo Editor, open a local JPG/JPEG, PNG or WebP image, or drop one into the workspace. The canvas supports fit-to-screen, actual size, zoom controls, wheel zoom, drag panning, 90-degree rotation, horizontal/vertical flips, and non-destructive crop with drag-to-draw, aspect presets, and pixel dimension controls. Undo and redo history covers rotation, flips, applied crops, and crop reset; it is session-only and clears when an image is replaced or closed. Imports are limited to 100 MB, 80 megapixels and 20,000 pixels per side. The image remains on-device and its original file is held unchanged; project saving and export are not yet available.
 
 ## PWA preview
 
@@ -69,7 +69,7 @@ No code, package, asset, or configuration is imported from or coupled to `NuroTr
 | --- | --- |
 | `npm run dev` | Vite development server |
 | `npm run build` | Build web/PWA shell into `dist/` |
-| `npm test` | Run built-in image loader, transform, crop, and canvas viewport checks |
+| `npm test` | Run built-in image loader, transform, crop, history, and canvas viewport checks |
 | `npm run preview` | Preview production web build |
 | `npm run electron:dev` | Run Vite + Electron locally |
 | `npm run electron:pack` | Package unpacked desktop app |

@@ -93,7 +93,7 @@ export function createCanvasViewport(canvas, {
     cancelCrop,
     resetCrop,
     setCrop(nextCrop) {
-      crop = image && nextCrop ? clampCropRect(nextCrop, sourceBounds()) : null;
+      crop = image && nextCrop ? clampCropRect(nextCrop, sourceBounds(), 0.000001) : null;
       fitToScreen();
     },
     setCropAspectRatio(ratio) {

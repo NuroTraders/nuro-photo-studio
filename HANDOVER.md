@@ -1,9 +1,9 @@
 # Nuro Photo Studio — Handover
 
-**Current milestone:** Phase 2 — Tasks 4 & 5 UI refinements implemented and ready for user review; Phase 1 Task 7 runtime checks remain open
+**Current milestone:** Phase 2 — Task 6 Undo/Redo History Engine implemented and awaiting user manual verification; Phase 1 Task 7 runtime checks remain open
 **Specification baseline:** NPS-TS-001 v1.0 (draft engineering baseline)  
 **App version:** 0.1.0 (see Version history below)
-**State:** Local image loading, Canvas 2D viewing, non-destructive quarter-turn rotation/flips, and crop preview/apply/reset with drag-to-draw are implemented. Automated checks pass. Runtime verification status is recorded below. No undo/redo, export changes, or AI behavior was added.
+**State:** Local image loading, Canvas 2D viewing, non-destructive quarter-turn rotation/flips, crop preview/apply/reset with drag-to-draw, and bounded session-only undo/redo for committed edits are implemented. Automated checks pass. Runtime verification status is recorded below. No export changes or AI behavior was added.
 
 ## What is here
 
@@ -18,6 +18,7 @@
 - Dedicated Canvas 2D viewport in `www/js/editor/viewport.js` with fit, actual-size, zoom and pan behavior; it draws the loader's decoded image without altering the source file.
 - Pure serializable transform state in `www/js/editor/transform-tool.js`, applied only during viewport rendering.
 - Pure crop geometry in `www/js/editor/crop-tool.js`; crop state maps between original image coordinates and the currently transformed visual coordinates.
+- Bounded immutable edit snapshots in `www/js/core/edit-history.js`; history stores only transform/crop metadata and clears on image replacement or close.
 - Validation/build helper scripts and npm lockfile.
 
 ## Deliberate boundaries
@@ -51,7 +52,7 @@ Completed:
 6. **Responsive design and theme switching:** added early theme restoration from local storage before stylesheet paint, persistent toggle updates, touch target sizing, and narrow-screen safeguards for panels, dialogs and menus. Reduced-motion styles remain enabled.
 7. **Testing and stabilization:** build and structural validation pass; fixed two production asset path defects (theme initializer omitted from build and manifest/icon precache paths hashed by Vite). Static assets now live under `www/public/`. Runtime responsive, dialog, browser console, offline-cache and packaged Electron checks are still outstanding; do not declare Phase 1 complete until those checks are run.
 
-Phase 2 Tasks 1–3 are implemented; Tasks 2, 3, and 4 are accepted. Task 5 Crop Tool is implemented and ready for user review; do not begin Task 6 until Task 5 is accepted. Separately close the carried Phase 1 Task 7 runtime checks: narrow viewport behavior, live service-worker/offline behavior, and packaged Electron validation.
+Phase 2 Tasks 1–5 are implemented; Tasks 2, 3, and 4 are accepted. Task 6 Undo/Redo is implemented and awaiting manual verification. Separately close the carried Phase 1 Task 7 runtime checks: narrow viewport behavior, live service-worker/offline behavior, and packaged Electron validation.
 
 1. Define an image document that retains the original source and separates working state.
 2. Add validated import for JPG/JPEG, PNG and WebP; report unsupported files and size limits.
@@ -60,7 +61,7 @@ Phase 2 Tasks 1–3 are implemented; Tasks 2, 3, and 4 are accepted. Task 5 Crop
 5. Add preview-resolution rendering and full-resolution export path; test large-image memory failures.
 6. Add interaction and integration checks for browser and Electron.
 
-Keep UI components thin. Image algorithms belong in `editor/` or `processing/`, not in DOM event handlers. Preserve local-only processing and do not begin model integration until its own phase has approved model/license/runtime details. Current project position: Tasks 4 and 5 are implemented; their latest UI refinements await review. Do not begin Task 6 before approval.
+Keep UI components thin. Image algorithms belong in `editor/` or `processing/`, not in DOM event handlers. Preserve local-only processing and do not begin model integration until its own phase has approved model/license/runtime details. Current project position: Tasks 4 and 5 are implemented; Task 6 is implemented and awaiting manual verification. No Task 7 export work has started.
 
 ## Phase 2 Task 4 — Rotate & Flip
 
@@ -125,7 +126,7 @@ Crop state is expressed in source image coordinates and mapped into the transfor
 
 ### Scope and next action
 
-No Undo/Redo, export changes, AI, external library, or version bump. Request user review and acceptance of Task 5 before beginning Task 6 Undo/Redo.
+No export changes, AI, external library, or version bump. Task 6 implementation was subsequently requested and is recorded below.
 
 ## Phase 2 Tasks 4 & 5 Refinements: Minimal Icons, Modern Crop & Ratio Presets
 
@@ -149,7 +150,7 @@ No Undo/Redo, export changes, AI, external library, or version bump. Request use
 - `git diff --check` — passed; Git emitted working-copy LF-to-CRLF notices.
 - Manual runtime tests were not performed by the coding agent per the latest pasted testing instruction. A user-facing manual verification guide is included in the implementation report.
 
-No source image mutation, external library, version bump, Undo/Redo, or export behavior was introduced. Do not begin Task 6 until the user approves these refinements and Task 5.
+No source image mutation, external library, version bump, or export behavior was introduced by this refinement. The user subsequently requested Phase 2 Task 6; its implementation is recorded below.
 
 ## Crop Box Orientation Rotate — Ratio & Dimension Swap
 
@@ -168,7 +169,29 @@ No source image mutation, external library, version bump, Undo/Redo, or export b
 - `npm run check`, `npm run build`, and `git diff --check` — run for this update; results are recorded in the final task report.
 - Per the task instruction, no browser, Electron, local server, or manual UI runtime test was launched. Follow the manual verification guide in the final task report.
 
-No package version change. No Task 6 work was started.
+No package version change. Task 6 was started only after the user's explicit request.
+
+## Phase 2 Task 6: Undo / Redo History Engine
+
+**Status:** Implemented; awaiting user manual verification. App version remains `0.1.0`.
+
+### Changes
+
+- Replaced the history placeholder with a 50-entry bounded memento manager. Snapshots are immutable and contain only quarter-turn rotation, flip flags, applied crop coordinates, and the selected aspect-ratio key. Duplicate consecutive states are ignored; a new state after undo clears redo history.
+- Added compact accessible Undo/Redo icon controls and keyboard shortcuts: Ctrl/Cmd+Z, Ctrl+Y, and Ctrl/Cmd+Shift+Z. Shortcuts ignore focused input, textarea, select, and editable content; history controls are unavailable while adjusting an uncommitted crop.
+- Rotation and flip actions, Apply Crop (including Enter), and Reset Crop record committed states. Crop pointer frames and uncommitted ratio/dimension editing are not separate history entries.
+- Undo/Redo restores transforms, applied crop, and ratio settings to the canvas viewport. History resets when an image is replaced or closed. The imported source File and decoded source pixels are never modified.
+- Added core history tests and rotate/crop/undo sequence coverage. Updated README and architecture notes.
+
+### Validation
+
+- `npm test` — passed (29 tests, 0 failures), including stack initialization, immutability, duplicate suppression, redo invalidation, bounded size/reset, rotate/crop/undo ordering, and crop viewport restoration.
+- `npm run check` — passed (`Project structure OK`, 19 required files).
+- `npm run build` — passed. Vite printed its existing informational notice that the static `theme-init.js` script cannot be bundled without `type="module"`.
+- `git diff --check` — passed; Git printed working-copy LF-to-CRLF notices.
+- Per the task instruction, no browser, Electron, local server, or manual UI runtime test was launched. Follow the manual verification guide in the final Task 6 report.
+
+No package version change. Do not start Task 7 until the user approves Task 6.
 
 ## Decisions and open items
 

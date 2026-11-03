@@ -8,11 +8,11 @@
 4. AI engine (later): ONNX initialization, provider selection, optional models and task modules.
 5. Platform: browser/PWA and Electron integration, storage, file access and printing.
 
-The browser and Electron share `www/`. Electron's renderer behaves like a browser page; privileged operations belong in the main process behind narrow preload APIs. Phase 0 exposes only version/platform metadata.
+The browser and Electron share `www/`. Electron's renderer behaves like a browser page; privileged operations belong in the main process behind narrow preload APIs. Phase 0 exposes only version/platform metadata. Current editor scope includes non-destructive rotation, flips, crop, and bounded session-only undo/redo for committed edits; export remains separate future work.
 
 ## Data direction
 
-UI events → core command/state → editor or processing module → preview/export result. Later AI jobs use a worker and explicit model manager. Retain original source data and represent edits as working state/operations so undo, comparison and export do not destroy the source. Quarter-turn rotation, horizontal/vertical flips, and crop are serializable edit state applied during Canvas 2D viewport rendering; crop coordinates, selected aspect ratio, and exact draft dimensions remain mathematical state mapped to transformed visual bounds, and crop preview clips the draw without changing source pixels. Zoom and pan remain separate view state.
+UI events → core command/state → editor or processing module → preview/export result. Later AI jobs use a worker and explicit model manager. Retain original source data and represent edits as working state/operations so undo, comparison and export do not destroy the source. Quarter-turn rotation, horizontal/vertical flips, and crop are serializable edit state applied during Canvas 2D viewport rendering; crop coordinates, selected aspect ratio, and exact draft dimensions remain mathematical state mapped to transformed visual bounds, and crop preview clips the draw without changing source pixels. `www/js/core/edit-history.js` keeps a bounded immutable snapshot history of committed rotation, flip, crop-apply, and crop-reset states. Draft crop gestures are not recorded. Zoom and pan remain separate view state.
 
 ## Offline behavior
 

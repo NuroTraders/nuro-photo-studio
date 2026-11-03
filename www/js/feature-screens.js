@@ -86,6 +86,23 @@ export function updateEditorImageUI(container, image) {
   return true;
 }
 
+export function updateEditorHistoryUI(container, { canUndo = false, canRedo = false, disabled = false } = {}) {
+  const undo = container.querySelector('[data-history-action="undo"]');
+  const redo = container.querySelector('[data-history-action="redo"]');
+  if (undo) undo.disabled = disabled || !canUndo;
+  if (redo) redo.disabled = disabled || !canRedo;
+}
+
+export function updateEditorTransformUI(container, transform = {}) {
+  const states = { 'flip-horizontal': Boolean(transform.flipHorizontal), 'flip-vertical': Boolean(transform.flipVertical) };
+  for (const [action, pressed] of Object.entries(states)) {
+    const button = container.querySelector(`[data-transform-action="${action}"]`);
+    if (!button) continue;
+    button.setAttribute('aria-pressed', String(pressed));
+    button.classList.toggle('is-active', pressed);
+  }
+}
+
 function createEditorWorkspace({ image, onOpenImage } = {}) {
   const panel = createCard({ tag: 'section', className: 'feature-panel editor-workspace-panel' });
   panel.setAttribute('aria-labelledby', 'panel-image-workspace');
@@ -387,12 +404,30 @@ function createViewportControls(hasImage = false) {
   ]) {
     const button = createButton({ label: '', variant: 'secondary', className: 'transform-icon-button', disabled: !hasImage });
     button.setAttribute('aria-label', label);
+    if (action.startsWith('flip-')) button.setAttribute('aria-pressed', 'false');
     button.title = title;
     button.append(createSvgIcon(paths));
     button.dataset.transformAction = action;
     transformToolbar.append(button);
   }
   controls.append(transformToolbar);
+
+  const historyToolbar = document.createElement('div');
+  historyToolbar.className = 'viewport-toolbar history-toolbar';
+  historyToolbar.setAttribute('role', 'group');
+  historyToolbar.setAttribute('aria-label', 'Edit history controls');
+  for (const [action, label, title, path] of [
+    ['undo', 'Undo', 'Undo (Ctrl+Z)', 'M8 7 3 11l5 4M3 11h8a6 6 0 0 1 6 6'],
+    ['redo', 'Redo', 'Redo (Ctrl+Y / Ctrl+Shift+Z)', 'M12 7l5 4-5 4m5-4H9a6 6 0 0 0-6 6'],
+  ]) {
+    const button = createButton({ label: '', variant: 'secondary', className: 'transform-icon-button history-icon-button', disabled: true });
+    button.setAttribute('aria-label', label);
+    button.title = title;
+    button.dataset.historyAction = action;
+    button.append(createSvgIcon([path]));
+    historyToolbar.append(button);
+  }
+  controls.append(historyToolbar);
 
   const upcoming = document.createElement('div');
   upcoming.className = 'viewport-upcoming-tools';

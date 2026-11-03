@@ -408,6 +408,8 @@ button.quick-action-card:hover { transform: translateY(-2px); border-color: var(
 .transform-toolbar { gap: 7px; }
 .transform-icon-button { width: 40px; min-width: 40px; height: 40px; min-height: 40px; padding: 0; border-radius: 11px; }
 .transform-icon-button svg, .crop-action-button svg { display: block; width: 20px; height: 20px; }
+.history-icon-button:disabled { opacity: .4; }
+.transform-icon-button.is-active { border-color: var(--color-primary); color: var(--color-primary-strong); background: var(--color-surface-raised); }
 .crop-toolbar { width: fit-content; max-width: 100%; gap: 5px; padding: 5px; border: 1px solid var(--color-border); border-radius: var(--radius-pill); background: var(--color-surface-raised); box-shadow: var(--shadow-card); }
 .crop-toolbar [hidden] { display: none; }
 .crop-settings { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; padding: 0 5px; }

@@ -359,3 +359,12 @@ test('viewport crop orientation swaps ratio and dimensions while keeping the dra
   assert.notDeepEqual(swapped, before);
   viewport.destroy();
 });
+
+test('restoring an applied crop preserves valid thin aspect-ratio dimensions', () => {
+  const { viewport } = setup();
+  viewport.setImage({ naturalWidth: 300, naturalHeight: 200 });
+  const crop = { x: 10, y: 10, width: 10, height: 40 };
+  viewport.setCrop(crop);
+  assert.deepEqual(viewport.getState().crop, crop);
+  viewport.destroy();
+});
