@@ -433,3 +433,23 @@ button.quick-action-card:hover { transform: translateY(-2px); border-color: var(
   .visual-control-grid { grid-template-columns: minmax(0, 1fr); }
   .status-tile-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Touch sizing and narrow-screen safeguards */
+.main-content, .feature-screen-grid, .feature-panel, .dashboard-hero, .dashboard-panel { min-width: 0; max-width: 100%; }
+.feature-panel-heading { min-width: 0; flex-wrap: wrap; }
+.feature-panel-heading > div { min-width: 0; }
+.feature-panel-heading h3, .feature-screen-intro h2, .quick-action-copy strong { overflow-wrap: anywhere; }
+.visual-control-value, .status-tile, .settings-row { overflow-wrap: anywhere; }
+.ui-dropdown-trigger { min-height: 44px; }
+.ui-dropdown-item { min-height: 44px; }
+.ui-dialog-actions { flex-wrap: wrap; }
+.ui-dialog-close, .ui-toast-dismiss { min-width: 44px; min-height: 44px; }
+.nav-item { min-height: 44px; }
+
+@media (max-width: 560px) {
+  .menu-toggle { width: 44px; height: 44px; }
+  .top-actions > .button { min-height: 44px; }
+  .theme-toggle { width: 44px; min-width: 44px; }
+  .ui-toast-region { width: calc(100vw - 24px); right: 12px; bottom: 12px; }
+  .ui-dialog { max-height: 85dvh; }
+}

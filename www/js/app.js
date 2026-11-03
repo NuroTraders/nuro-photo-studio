@@ -79,13 +79,29 @@ document.addEventListener('keydown', (event) => {
 
 const root = document.documentElement;
 const themeMeta = document.querySelector('meta[name="theme-color"]');
+const themeKey = 'nuro-photo-studio.theme';
+
+function applyTheme(theme, persist = false) {
+  const selectedTheme = theme === 'light' ? 'light' : 'dark';
+  root.dataset.theme = selectedTheme;
+  const isLight = selectedTheme === 'light';
+  themeToggle.setAttribute('aria-pressed', String(isLight));
+  themeToggle.setAttribute('aria-label', `Switch to ${isLight ? 'dark' : 'light'} theme`);
+  themeToggle.querySelector('.theme-label').textContent = `${isLight ? 'Dark' : 'Light'} theme`;
+  themeToggle.querySelector('.theme-icon').textContent = isLight ? '☾' : '☼';
+  themeMeta.content = isLight ? '#f3f6f3' : '#10151b';
+  if (persist) {
+    try {
+      window.localStorage.setItem(themeKey, selectedTheme);
+    } catch {
+      // Keep the in-session choice even if persistent storage is unavailable.
+    }
+  }
+}
+
+applyTheme(root.dataset.theme);
 themeToggle.addEventListener('click', () => {
-  const light = root.dataset.theme !== 'light';
-  root.dataset.theme = light ? 'light' : 'dark';
-  themeToggle.setAttribute('aria-pressed', String(light));
-  themeToggle.setAttribute('aria-label', light ? 'Switch to dark theme' : 'Switch to light theme');
-  themeToggle.querySelector('.theme-label').textContent = light ? 'Dark theme' : 'Light theme';
-  themeMeta.content = light ? '#f3f6f3' : '#10151b';
+  applyTheme(root.dataset.theme === 'light' ? 'dark' : 'light', true);
 });
 
 registerServiceWorker();

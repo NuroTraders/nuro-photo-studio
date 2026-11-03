@@ -1,6 +1,6 @@
 # Nuro Photo Studio — Handover
 
-**Current milestone:** Phase 1 — Feature Screen Layouts complete
+**Current milestone:** Phase 1 — Responsive Design and Theme Switching complete
 **Specification baseline:** NPS-TS-001 v1.0 (draft engineering baseline)  
 **App version:** 0.1.0 (see Version history below)
 **State:** Foundation scaffold; no production editing or AI behavior yet
@@ -21,7 +21,7 @@
 - No relationship, source dependency, clone, or changes to `NuroTraders/bg-remover`.
 - No AI runtime, model weights, inference, model download, or CDN runtime.
 - No image upload or cloud service.
-- Image import and project persistence are not part of the current dashboard; no recent-project records are fabricated.
+- Image import and project persistence are not part of the current UI; no recent-project records are fabricated. The selected appearance theme is saved locally as a UI preference.
 - Signing, updates, analytics, persistence, ID compliance presets and production image algorithms are deferred.
 
 ## Collaboration rules
@@ -32,7 +32,7 @@
 
 ## Version history
 
-- **0.1.0 (current; checked 2026-11-03)** — Phase 0 starter version, retained through Phase 1 Tasks 1–4. No release version bump has been made for these implementation tasks. The app sidebar displays this version; Git commits preserve task-level source history. A public GitHub Release/tag has not been recorded here.
+- **0.1.0 (current; checked 2026-11-03)** — Phase 0 starter version, retained through Phase 1 Tasks 1–6. No release version bump has been made for these implementation tasks. The app sidebar displays this version; Git commits preserve task-level source history. A public GitHub Release/tag has not been recorded here.
 
 ## Phase 1 task plan
 
@@ -43,6 +43,7 @@ Completed:
 3. **Home dashboard:** reusable dashboard renderer with a welcome panel, editor action, four quick actions, empty recent-project state, feature shortcuts, and privacy tip. Upcoming actions are labeled and non-interactive; no import behavior or project data is added.
 4. **Navigation and UI components:** added accessible vanilla DOM factories for buttons, icon buttons, cards, badges, native dialogs, keyboard dropdowns, timed toasts, form inputs, empty states, and loading indicators. Dashboard controls reuse the shared factories. API usage is documented in `docs/UI-COMPONENTS.md`.
 5. **Feature screen layouts:** added responsive Photo Editor, Enhance & Restore, ID Photo Studio, Batch Processing, Model Manager and Settings layouts. Controls are clearly visual placeholders where behavior is not implemented; no import, image processing, AI, model installation or fake queue data is presented.
+6. **Responsive design and theme switching:** added early theme restoration from local storage before stylesheet paint, persistent toggle updates, touch target sizing, and narrow-screen safeguards for panels, dialogs and menus. Reduced-motion styles remain enabled.
 
 Next action: define the image document model, keeping the original source separate from working state. Follow the current phase plan and do not add image importing until its scheduled phase.
 
@@ -70,3 +71,4 @@ Keep UI components thin. Image algorithms belong in `editor/` or `processing/`, 
 - Phase 1 Task 1: established dark-default design tokens, reusable controls and shell component styles, visible keyboard focus, and a token-coordinated light theme. Checked with `npm run check` and `npm run build`.
 - Phase 1 Task 4: added reusable UI component factories and API documentation; dashboard cards, buttons, badges and empty state now use shared components. `npm run check`, changed-module syntax checks, and `git diff --check` pass. Browser interaction/console review remains pending.
 - Phase 1 Task 5: replaced generic navigation placeholders with responsive layouts for all six planned feature screens, using shared cards, badges, empty states and buttons. Confirmed with project and JavaScript syntax checks; manual browser/console review remains pending.
+- Phase 1 Task 6: theme selection now applies immediately and persists locally across reloads; added pre-paint theme restoration and responsive touch/layout refinements. Validation: `npm run check`, JavaScript syntax checks, and `git diff --check`; browser reload and viewport review remain pending.
