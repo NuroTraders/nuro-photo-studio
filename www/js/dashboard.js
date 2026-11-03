@@ -15,7 +15,7 @@ export function renderDashboard(container) {
       <p class="lede">A thoughtful place to prepare and work with your photos. Your files stay on this device.</p>
     </div>
     <div class="hero-action-wrap">
-      <p class="action-note">Photo importing is coming in a future phase.</p>
+      <p class="action-note">Open a local image from the Photo Editor workspace.</p>
     </div>`;
   const openPhoto = createButton({ label: '＋  Open Photo  →', variant: 'primary', className: 'hero-action' });
   openPhoto.dataset.navigate = 'editor';

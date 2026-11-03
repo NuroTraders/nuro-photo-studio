@@ -1,6 +1,6 @@
 # Nuro Photo Studio
 
-**Phase 1 early build · app version 0.1.0**
+**Phase 2 early build · app version 0.1.0**
 
 **Live preview:** [Nuro Photo Studio on GitHub Pages](https://nurotraders.github.io/nuro-photo-studio/)
 
@@ -18,7 +18,7 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. The app includes a responsive dashboard, theme switch, navigation, and shared UI components. Photo importing and project saving are not yet available.
+Open the local URL printed by Vite. The app includes a responsive dashboard, theme switch, navigation, and shared UI components. In Photo Editor, open a local JPG/JPEG, PNG or WebP image, or drop one into the workspace. Imports are limited to 100 MB, 80 megapixels and 20,000 pixels per side. The image remains on-device and its original file is held unchanged; project saving and editing operations are not yet available.
 
 ## PWA preview
 
@@ -69,6 +69,7 @@ No code, package, asset, or configuration is imported from or coupled to `NuroTr
 | --- | --- |
 | `npm run dev` | Vite development server |
 | `npm run build` | Build web/PWA shell into `dist/` |
+| `npm test` | Run built-in image loader validation and resource lifecycle checks |
 | `npm run preview` | Preview production web build |
 | `npm run electron:dev` | Run Vite + Electron locally |
 | `npm run electron:pack` | Package unpacked desktop app |
@@ -77,7 +78,7 @@ No code, package, asset, or configuration is imported from or coupled to `NuroTr
 
 ## Security and privacy notes
 
-- Images remain local in this starter. No network upload code exists.
+- Imported images remain local and are not sent to the network. The source `File` is retained unchanged in memory; closing the image releases its preview object URL. No project persistence exists yet.
 - Do not load arbitrary remote content in Electron. Keep navigation restricted to the local app and deny unexpected window creation.
 - Keep `contextIsolation`, `sandbox`, and `webSecurity` enabled; keep `nodeIntegration` disabled.
 - Add new preload methods only for narrowly scoped, validated tasks. Never expose raw `ipcRenderer`, filesystem, shell, or generic IPC methods.

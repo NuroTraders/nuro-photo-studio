@@ -1,9 +1,9 @@
 # Nuro Photo Studio — Handover
 
-**Current milestone:** Phase 1 — Task 7 stabilization review in progress; acceptance checks remain
+**Current milestone:** Phase 2 — Task 1 image import implemented; Phase 1 Task 7 runtime checks remain open
 **Specification baseline:** NPS-TS-001 v1.0 (draft engineering baseline)  
 **App version:** 0.1.0 (see Version history below)
-**State:** Foundation scaffold; no production editing or AI behavior yet
+**State:** Local image loading and preview are implemented; no editing operations or AI behavior yet
 
 ## What is here
 
@@ -14,14 +14,15 @@
 - Electron Builder Windows NSIS configuration.
 - Architecture, privacy/security, initialization, release, model-policy and Phase 0 checklist docs.
 - Shared vanilla DOM components and their API guide in `www/js/ui/components.js` and `docs/UI-COMPONENTS.md`.
+- Dedicated local image loader in `www/js/editor/image-loader.js`, retaining original `File` data and using a releasable object URL for preview.
 - Validation/build helper scripts and npm lockfile.
 
 ## Deliberate boundaries
 
 - No relationship, source dependency, clone, or changes to `NuroTraders/bg-remover`.
 - No AI runtime, model weights, inference, model download, or CDN runtime.
-- No image upload or cloud service.
-- Image import and project persistence are not part of the current UI; no recent-project records are fabricated. The selected appearance theme is saved locally as a UI preference.
+- No image upload or cloud service. Imported photos remain local.
+- Project persistence and recent-project records are not implemented or fabricated. The selected appearance theme is saved locally as a UI preference.
 - Signing, updates, analytics, persistence, ID compliance presets and production image algorithms are deferred.
 
 ## Collaboration rules
@@ -32,7 +33,7 @@
 
 ## Version history
 
-- **0.1.0 (current; checked 2026-11-03)** — Phase 0 starter version, retained through Phase 1 Tasks 1–6. No release version bump has been made for these implementation tasks. The app sidebar displays this version; Git commits preserve task-level source history. A public GitHub Release/tag has not been recorded here.
+- **0.1.0 (current; checked 2026-11-03)** — Phase 0 starter version, retained through Phase 2 Task 1. Task 1 adds local JPG/JPEG, PNG and WebP import/preview without changing package version. No public GitHub Release/tag is recorded here.
 
 ## Phase 1 task plan
 
@@ -46,7 +47,7 @@ Completed:
 6. **Responsive design and theme switching:** added early theme restoration from local storage before stylesheet paint, persistent toggle updates, touch target sizing, and narrow-screen safeguards for panels, dialogs and menus. Reduced-motion styles remain enabled.
 7. **Testing and stabilization:** build and structural validation pass; fixed two production asset path defects (theme initializer omitted from build and manifest/icon precache paths hashed by Vite). Static assets now live under `www/public/`. Runtime responsive, dialog, browser console, offline-cache and packaged Electron checks are still outstanding; do not declare Phase 1 complete until those checks are run.
 
-Next action: finish Task 7 runtime acceptance checks in a browser/PWA and packaged Electron environment, including narrow viewport and offline behavior. After Phase 1 is accepted, define the image document model, keeping original source separate from working state, before implementing Phase 2 import.
+Phase 2 Task 1 is implemented. Next: build the editor canvas viewport (fit, zoom and pan) around the imported image, keeping transforms non-destructive. Separately close the carried Phase 1 Task 7 runtime checks: narrow viewport behavior, browser console, live service-worker/offline behavior, and packaged Electron validation.
 
 1. Define an image document that retains the original source and separates working state.
 2. Add validated import for JPG/JPEG, PNG and WebP; report unsupported files and size limits.
@@ -75,3 +76,4 @@ Keep UI components thin. Image algorithms belong in `editor/` or `processing/`, 
 - Phase 1 Task 6: theme selection applies immediately and persists locally across reloads; pre-paint restoration is served from Vite's `www/public/` directory. Responsive touch/layout refinements are in place. Task 7 build review caught and fixed the original theme script being omitted from `dist`.
 - Phase 1 Task 7 stabilization (2026-11-03): `npm ci` completed after network access was approved (npm reported upstream deprecation notices); `npm run check`, `npm run build`, changed-module/Electron syntax checks, manifest JSON parsing, workflow-equivalent PWA shell asset checks and `git diff --check` passed. Build emits Vite's informational warning that the synchronous pre-paint `theme-init.js` script is copied as a static file and is not bundled. Electron development app started and the six feature screens plus Home were visually opened; the saved light theme remained selected after reload. Electron security settings were inspected and retained. The service-worker/manifest/icon mismatch was reproduced by checking production build output and fixed by serving the manifest and icon at the stable paths expected by `sw.js`.
 - Task 7 not yet accepted: IAB/Chrome could not reach the local server during the final browser attempt, so mobile/tablet viewport overflow, browser console, live service-worker registration/cache install/offline reload, and dialog Escape/focus restoration were not dynamically verified. Reduced-motion and visible focus rules were confirmed in CSS; accessible names/labels and screen structure were inspected in the app accessibility tree, but a full keyboard-only audit was not performed. Electron dev launch worked; packaged Electron launch and preload/IPC runtime behavior remain unverified. No failures were observed in the checks that ran; unverified items are not counted as passing.
+- Phase 2 Task 1 (2026-11-03): added strict local JPG/JPEG, PNG and WebP validation, header-based dimension and EXIF orientation inspection, decode/error handling, a 100 MB/80 MP/20,000-pixel-side safety limit, preview loading in the existing Photo Editor, drag-and-drop, image properties, and close/release behavior. The original `File` is retained in the image document and is never rewritten. Added Node built-in tests (`npm test`) without new dependencies. A synthetic PNG was opened in Electron dev; the preview and 1 × 1 dimensions appeared, then Close image returned the workspace to empty. Test fixture was removed after the check. The referenced NPS-TS-001 v1.0 technical specification was not present in this checkout; implementation used the checked-in architecture/privacy guidance and user-supplied requirements. Unit tests mock the browser image decoder, so actual browser decoding of JPG/WebP and a native drag/drop gesture still need manual validation.

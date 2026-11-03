@@ -1,7 +1,7 @@
 import { createBadge, createButton, createCard, createEmptyState } from './ui/components.js';
 
 const screenCopy = {
-  editor: { eyebrow: 'PHOTO WORKSPACE', title: 'Photo Editor', intro: 'A focused workspace for your photo. Import and editing tools will be added in a future phase.' },
+  editor: { eyebrow: 'PHOTO WORKSPACE', title: 'Photo Editor', intro: 'Open a local image to view its details. Editing tools will be added in a future phase.' },
   enhance: { eyebrow: 'ENHANCE & RESTORE', title: 'Bring out more detail', intro: 'Enhancement and restoration tools are planned. No image processing runs on this screen.' },
   'id-photo': { eyebrow: 'ID PHOTO STUDIO', title: 'Prepare an ID photo', intro: 'Photo sizes, background controls, positioning guides, and print layouts are planned for a later phase.' },
   batch: { eyebrow: 'BATCH PROCESSING', title: 'Work through a set of photos', intro: 'Batch workflows are planned. There is no queue or image processing yet.' },
@@ -9,7 +9,7 @@ const screenCopy = {
   settings: { eyebrow: 'PREFERENCES', title: 'Settings', intro: 'Appearance is available from the theme control in the top bar. Additional app preferences are planned.' },
 };
 
-export function renderFeatureScreen(container, screenId) {
+export function renderFeatureScreen(container, screenId, options = {}) {
   const content = screenCopy[screenId];
   if (!content) return false;
   container.replaceChildren();
@@ -32,13 +32,135 @@ export function renderFeatureScreen(container, screenId) {
   const layout = screenLayouts[screenId];
   const grid = document.createElement('div');
   grid.className = `feature-screen-grid ${layout.className || ''}`.trim();
-  for (const panelSpec of layout.panels) grid.append(createPanel(panelSpec));
+  for (const panelSpec of layout.panels) {
+    if (screenId === 'editor' && panelSpec.title === 'Image workspace') {
+      grid.append(createEditorWorkspace(options));
+    } else if (screenId === 'editor' && panelSpec.title === 'Properties') {
+      grid.append(createEditorProperties(options.image?.document));
+    } else {
+      grid.append(createPanel(panelSpec));
+    }
+  }
   container.append(grid);
 
   const footer = createButton({ label: 'Back to Home', variant: 'secondary', className: 'feature-screen-home' });
   footer.dataset.navigate = 'home';
   container.append(footer);
   return true;
+}
+
+function createEditorWorkspace({ image, onOpenImage } = {}) {
+  const panel = createCard({ tag: 'section', className: 'feature-panel editor-workspace-panel' });
+  panel.setAttribute('aria-labelledby', 'panel-image-workspace');
+  panel.dataset.editorDropzone = 'true';
+
+  const header = document.createElement('div');
+  header.className = 'feature-panel-heading';
+  const titleGroup = document.createElement('div');
+  const eyebrow = document.createElement('p');
+  eyebrow.className = 'eyebrow';
+  eyebrow.textContent = 'CANVAS';
+  const title = document.createElement('h3');
+  title.id = 'panel-image-workspace';
+  title.textContent = 'Image workspace';
+  titleGroup.append(eyebrow, title);
+  header.append(titleGroup, createBadge({ label: image ? 'IMAGE READY' : 'LOCAL IMAGE' }));
+
+  const canvas = document.createElement('div');
+  canvas.className = `editor-canvas-placeholder${image ? ' has-image' : ''}`;
+  if (image) {
+    const preview = document.createElement('img');
+    preview.className = 'editor-image-preview';
+    preview.src = image.objectUrl;
+    preview.alt = `Preview of ${image.document.name}`;
+    preview.draggable = false;
+    canvas.append(preview);
+  } else {
+    canvas.append(placeholder({ icon: '▧', title: 'Your workspace is empty', description: 'Choose a JPG, PNG, or WebP image, or drag one into this workspace.' }));
+  }
+
+  const fileInput = document.createElement('input');
+  fileInput.className = 'editor-file-input';
+  fileInput.type = 'file';
+  fileInput.id = 'editor-image-file';
+  fileInput.hidden = true;
+  fileInput.accept = '.jpg,.jpeg,.png,.webp';
+  fileInput.tabIndex = -1;
+  fileInput.setAttribute('aria-label', 'Choose an image file');
+  fileInput.dataset.imageFileInput = 'true';
+
+  const actions = document.createElement('div');
+  actions.className = 'editor-import-actions';
+  const openButton = createButton({ label: image ? 'Replace image' : 'Open Image', variant: 'primary' });
+  openButton.setAttribute('aria-controls', fileInput.id);
+  openButton.dataset.openImage = 'true';
+  openButton.addEventListener('click', onOpenImage);
+  actions.append(openButton);
+  if (image) {
+    const closeButton = createButton({ label: 'Close image', variant: 'secondary' });
+    closeButton.dataset.closeImage = 'true';
+    actions.append(closeButton);
+  }
+  const status = document.createElement('p');
+  status.className = 'editor-import-status';
+  status.dataset.importStatus = 'true';
+  status.setAttribute('role', 'status');
+  status.setAttribute('aria-live', 'polite');
+  status.textContent = image ? 'Original file remains unchanged on this device.' : 'Files stay on this device. Nothing is uploaded.';
+
+  panel.append(header, canvas, fileInput, actions, status);
+  return panel;
+}
+
+function createEditorProperties(documentInfo) {
+  if (!documentInfo) {
+    return createPanel({ title: 'Properties', eyebrow: 'IMAGE DETAILS', className: 'editor-properties-panel', content: () => placeholder({ icon: '⌁', title: 'No image selected', description: 'Dimensions and file information will appear here after you open an image.' }) });
+  }
+  const panel = createCard({ tag: 'section', className: 'feature-panel editor-properties-panel' });
+  panel.setAttribute('aria-labelledby', 'panel-editor-properties');
+  const header = document.createElement('div');
+  header.className = 'feature-panel-heading';
+  const eyebrow = document.createElement('p');
+  eyebrow.className = 'eyebrow';
+  eyebrow.textContent = 'IMAGE DETAILS';
+  const title = document.createElement('h3');
+  title.id = 'panel-editor-properties';
+  title.textContent = 'Properties';
+  const titleGroup = document.createElement('div');
+  titleGroup.append(eyebrow, title);
+
+  const details = document.createElement('dl');
+  details.className = 'editor-image-details';
+  const rows = [
+    ['File name', documentInfo.name],
+    ['Format', documentInfo.mimeType.replace('image/', '').toUpperCase().replace('JPEG', 'JPG')],
+    ['Dimensions', `${documentInfo.width.toLocaleString()} × ${documentInfo.height.toLocaleString()} px`],
+    ['File size', formatFileSize(documentInfo.size)],
+  ];
+  for (const [label, value] of rows) {
+    const row = document.createElement('div');
+    row.className = 'editor-image-detail-row';
+    const term = document.createElement('dt');
+    term.textContent = label;
+    const description = document.createElement('dd');
+    description.textContent = value;
+    row.append(term, description);
+    details.append(row);
+  }
+  const note = document.createElement('p');
+  note.className = 'editor-source-note';
+  note.textContent = documentInfo.orientation >= 2 && documentInfo.orientation <= 8
+    ? 'Embedded photo orientation is applied for display. The original file is preserved.'
+    : 'The original image file is preserved unchanged.';
+  header.append(titleGroup);
+  panel.append(header, details, note);
+  return panel;
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return `${bytes} bytes`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function createPanel({ title, eyebrow, className = '', content, badge }) {
@@ -110,10 +232,10 @@ const screenLayouts = {
   editor: {
     className: 'editor-screen-grid',
     panels: [
-      { title: 'Image workspace', eyebrow: 'CANVAS', className: 'editor-workspace-panel', badge: 'IMPORT NOT AVAILABLE', content: () => {
+      { title: 'Image workspace', eyebrow: 'CANVAS', className: 'editor-workspace-panel', badge: 'LOCAL IMAGE', content: () => {
         const canvas = document.createElement('div');
         canvas.className = 'editor-canvas-placeholder';
-        canvas.append(placeholder({ icon: '▧', title: 'Your workspace is empty', description: 'Image importing will be added in a future phase.' }));
+        canvas.append(placeholder({ icon: '▧', title: 'Your workspace is empty', description: 'Choose a JPG, PNG, or WebP image, or drag one into this workspace.' }));
         return canvas;
       } },
       { title: 'Editing tools', eyebrow: 'TOOLBAR', className: 'editor-toolbar-panel', badge: 'PLANNED', content: () => {
@@ -127,7 +249,7 @@ const screenLayouts = {
         }
         return tools;
       } },
-      { title: 'Properties', eyebrow: 'IMAGE DETAILS', className: 'editor-properties-panel', content: () => placeholder({ icon: '⌁', title: 'No image selected', description: 'Image dimensions and properties will appear here after importing is available.' }) },
+      { title: 'Properties', eyebrow: 'IMAGE DETAILS', className: 'editor-properties-panel', content: () => placeholder({ icon: '⌁', title: 'No image selected', description: 'Dimensions and file information will appear here after you open an image.' }) },
     ],
   },
   enhance: {

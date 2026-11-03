@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 const required = [
   'www/index.html', 'www/styles.css', 'www/sw.js', 'www/public/manifest.webmanifest',
   'www/public/assets/icons/icon.svg', 'www/public/theme-init.js',
+  'www/js/editor/image-loader.js', 'www/js/core/image-document.js', 'www/js/feature-screens.js',
+  'scripts/test-image-loader.mjs',
   'electron/main.cjs', 'electron/preload.cjs', 'electron/electron-builder.yml',
   'README.md', 'HANDOVER.md',
 ];
