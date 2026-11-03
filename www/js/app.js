@@ -5,6 +5,10 @@ import { navigationItems } from './navigation.js';
 import { loadImageFile, releaseLoadedImage, ImageImportError } from './editor/image-loader.js';
 import { createAppState } from './core/state.js';
 import { createCanvasViewport } from './editor/viewport.js';
+import {
+  DEFAULT_TRANSFORM, rotateClockwise, rotateCounterClockwise,
+  toggleFlipHorizontal, toggleFlipVertical,
+} from './editor/transform-tool.js';
 
 const dashboard = document.querySelector('#main');
 const screenTitle = document.querySelector('#screen-title');
@@ -18,6 +22,7 @@ let activeImage = null;
 let importSequence = 0;
 let activeScreen = 'home';
 let editorViewport = null;
+let activeTransform = { ...DEFAULT_TRANSFORM };
 
 renderDashboard(dashboard);
 
@@ -73,6 +78,8 @@ dashboard.addEventListener('click', (event) => {
   if (event.target.closest('[data-close-image]')) closeCurrentImage();
   const viewportAction = event.target.closest('[data-viewport-action]')?.dataset.viewportAction;
   if (viewportAction) runViewportAction(viewportAction);
+  const transformAction = event.target.closest('[data-transform-action]')?.dataset.transformAction;
+  if (transformAction) runTransformAction(transformAction);
 });
 dashboard.addEventListener('input', (event) => {
   if (event.target.matches('[data-viewport-zoom]')) {
@@ -129,10 +136,12 @@ async function importImage(file) {
     }
     const previousImage = activeImage;
     activeImage = loadedImage;
+    activeTransform = { ...DEFAULT_TRANSFORM };
     appState.setActiveDocument(loadedImage.document);
     if (activeScreen !== 'editor') navigateTo('editor');
     else if (editorViewport) {
       editorViewport.setImage(loadedImage.image);
+      editorViewport.setTransform(activeTransform);
       updateEditorImageUI(dashboard, loadedImage);
     } else renderEditorScreen();
     releaseLoadedImage(previousImage);
@@ -157,6 +166,7 @@ function setImportStatus(message, isError = false) {
 function closeCurrentImage() {
   importSequence += 1;
   editorViewport?.setImage(null);
+  activeTransform = { ...DEFAULT_TRANSFORM };
   releaseLoadedImage(activeImage);
   activeImage = null;
   appState.setActiveDocument(null);
@@ -175,8 +185,10 @@ function renderEditorScreen() {
   editorViewport = createCanvasViewport(canvas, {
     emptyState: dashboard.querySelector('[data-canvas-empty-state]'),
     onZoomChange: updateZoomControls,
+    onRotate: runTransformAction,
   });
   editorViewport.setImage(activeImage?.image ?? null);
+  editorViewport.setTransform(activeTransform);
 }
 
 function destroyEditorViewport() {
@@ -192,6 +204,16 @@ function runViewportAction(action) {
   else if (action === 'actual-size') editorViewport.actualSize();
 }
 
+function runTransformAction(action) {
+  if (!activeImage || !editorViewport) return;
+  if (action === 'rotate-cw') activeTransform = rotateClockwise(activeTransform);
+  else if (action === 'rotate-ccw') activeTransform = rotateCounterClockwise(activeTransform);
+  else if (action === 'flip-horizontal') activeTransform = toggleFlipHorizontal(activeTransform);
+  else if (action === 'flip-vertical') activeTransform = toggleFlipVertical(activeTransform);
+  else return;
+  editorViewport.setTransform(activeTransform);
+}
+
 function updateZoomControls({ percent }) {
   const slider = dashboard.querySelector('[data-viewport-zoom]');
   const output = dashboard.querySelector('[data-viewport-zoom-label]');
@@ -205,6 +227,7 @@ window.addEventListener('pagehide', (event) => {
   destroyEditorViewport();
   releaseLoadedImage(activeImage);
   activeImage = null;
+  activeTransform = { ...DEFAULT_TRANSFORM };
 });
 
 menuToggle.addEventListener('click', () => {
@@ -217,6 +240,16 @@ menuToggle.addEventListener('click', () => {
 });
 backdrop.addEventListener('click', closeMobileNavigation);
 document.addEventListener('keydown', (event) => {
+  if (!event.defaultPrevented && activeScreen === 'editor' && activeImage && event.key.toLowerCase() === 'r'
+    && !event.ctrlKey && !event.altKey && !event.metaKey && !document.querySelector('dialog[open]')) {
+    const workspace = dashboard.querySelector('.editor-workspace-panel');
+    const target = event.target;
+    if (workspace?.contains(target) && !target.matches('input, textarea, select, [contenteditable="true"]') && !target.isContentEditable) {
+      runTransformAction(event.shiftKey ? 'rotate-ccw' : 'rotate-cw');
+      event.preventDefault();
+      return;
+    }
+  }
   if (event.key === 'Escape' && sidebar.classList.contains('is-open')) {
     closeMobileNavigation();
     menuToggle.focus();

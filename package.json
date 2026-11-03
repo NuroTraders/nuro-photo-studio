@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
-    "test": "node --test scripts/test-image-loader.mjs scripts/test-viewport.mjs",
+    "test": "node --test scripts/test-image-loader.mjs scripts/test-viewport.mjs scripts/test-transform.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "electron:dev": "concurrently -k \"vite --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && cross-env NPS_DEV_URL=http://127.0.0.1:5173 electron .\"",
     "electron:pack": "npm run build && electron-builder --dir",

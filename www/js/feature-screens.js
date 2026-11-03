@@ -1,7 +1,7 @@
 import { createBadge, createButton, createCard, createEmptyState } from './ui/components.js';
 
 const screenCopy = {
-  editor: { eyebrow: 'PHOTO WORKSPACE', title: 'Photo Editor', intro: 'Open a local image to view its details. Editing tools will be added in a future phase.' },
+  editor: { eyebrow: 'PHOTO WORKSPACE', title: 'Photo Editor', intro: 'Open a local image to view, rotate, flip, and inspect it. The original file remains unchanged.' },
   enhance: { eyebrow: 'ENHANCE & RESTORE', title: 'Bring out more detail', intro: 'Enhancement and restoration tools are planned. No image processing runs on this screen.' },
   'id-photo': { eyebrow: 'ID PHOTO STUDIO', title: 'Prepare an ID photo', intro: 'Photo sizes, background controls, positioning guides, and print layouts are planned for a later phase.' },
   batch: { eyebrow: 'BATCH PROCESSING', title: 'Work through a set of photos', intro: 'Batch workflows are planned. There is no queue or image processing yet.' },
@@ -77,7 +77,7 @@ export function updateEditorImageUI(container, image) {
     status.setAttribute('role', 'status');
   }
 
-  workspace.querySelectorAll('[data-viewport-action], [data-viewport-zoom]').forEach((control) => {
+  workspace.querySelectorAll('[data-viewport-action], [data-transform-action], [data-viewport-zoom]').forEach((control) => {
     control.disabled = !image;
   });
 
@@ -375,6 +375,23 @@ function createViewportControls(hasImage = false) {
   toolbar.append(zoomOut, slider, zoomLabel, zoomIn, fit, actual);
   controls.append(toolbar);
 
+  const transformToolbar = document.createElement('div');
+  transformToolbar.className = 'viewport-toolbar transform-toolbar';
+  transformToolbar.setAttribute('role', 'group');
+  transformToolbar.setAttribute('aria-label', 'Image rotation and flip controls');
+  for (const [action, label] of [
+    ['rotate-ccw', 'Rotate counter-clockwise'],
+    ['rotate-cw', 'Rotate clockwise'],
+    ['flip-horizontal', 'Flip horizontal'],
+    ['flip-vertical', 'Flip vertical'],
+  ]) {
+    const button = createButton({ label, variant: 'secondary', disabled: !hasImage });
+    button.setAttribute('aria-label', label);
+    button.dataset.transformAction = action;
+    transformToolbar.append(button);
+  }
+  controls.append(transformToolbar);
+
   const upcoming = document.createElement('div');
   upcoming.className = 'viewport-upcoming-tools';
   const upcomingLabel = document.createElement('p');
@@ -382,7 +399,7 @@ function createViewportControls(hasImage = false) {
   upcomingLabel.textContent = 'UPCOMING EDITING TOOLS';
   const tools = document.createElement('div');
   tools.className = 'tool-placeholder-list';
-  for (const tool of ['Crop', 'Rotate', 'Adjust', 'Compare', 'Export']) {
+  for (const tool of ['Crop', 'Adjust', 'Compare', 'Export']) {
     const item = document.createElement('span');
     item.className = 'tool-placeholder';
     item.textContent = tool;

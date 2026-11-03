@@ -12,7 +12,7 @@ The browser and Electron share `www/`. Electron's renderer behaves like a browse
 
 ## Data direction
 
-UI events → core command/state → editor or processing module → preview/export result. Later AI jobs use a worker and explicit model manager. Retain original source data and represent edits as working state/operations so undo, comparison and export do not destroy the source.
+UI events → core command/state → editor or processing module → preview/export result. Later AI jobs use a worker and explicit model manager. Retain original source data and represent edits as working state/operations so undo, comparison and export do not destroy the source. The current quarter-turn rotation and horizontal/vertical flips are serializable edit state applied only during Canvas 2D viewport rendering; zoom and pan remain separate view state.
 
 ## Offline behavior
 

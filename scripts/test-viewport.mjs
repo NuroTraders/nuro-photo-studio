@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createCanvasViewport } from '../www/js/editor/viewport.js';
 
 const originalWindow = globalThis.window;
+const originalDocument = globalThis.document;
 const originalResizeObserver = globalThis.ResizeObserver;
 const originalRequestAnimationFrame = globalThis.requestAnimationFrame;
 const originalCancelAnimationFrame = globalThis.cancelAnimationFrame;
@@ -11,9 +12,31 @@ let resizeObserver;
 
 afterEach(() => {
   globalThis.window = originalWindow;
+  globalThis.document = originalDocument;
   globalThis.ResizeObserver = originalResizeObserver;
   globalThis.requestAnimationFrame = originalRequestAnimationFrame;
   globalThis.cancelAnimationFrame = originalCancelAnimationFrame;
+});
+
+test('R shortcuts rotate only when the canvas is the active shortcut target', () => {
+  const { canvas, viewport } = setup();
+  const rotations = [];
+  viewport.destroy();
+  const focusedCanvas = new MockCanvas(canvas.parentElement);
+  const focusedViewport = createCanvasViewport(focusedCanvas, { onRotate: (action) => rotations.push(action) });
+  focusedViewport.setImage({ naturalWidth: 200, naturalHeight: 100 });
+  let prevented = false;
+  focusedCanvas.dispatch('keydown', { target: focusedCanvas, key: 'r', shiftKey: false, preventDefault() { prevented = true; } });
+  assert.deepEqual(rotations, ['rotate-cw']);
+  assert.equal(prevented, true);
+  focusedCanvas.dispatch('keydown', { target: focusedCanvas, key: 'R', shiftKey: true, preventDefault() {} });
+  assert.deepEqual(rotations, ['rotate-cw', 'rotate-ccw']);
+  focusedCanvas.dispatch('keydown', { target: focusedCanvas, key: 'r', ctrlKey: true, shiftKey: false, preventDefault() {} });
+  assert.equal(rotations.length, 2, 'modified browser shortcuts are left alone');
+  globalThis.document.querySelector = () => ({ open: true });
+  focusedCanvas.dispatch('keydown', { target: focusedCanvas, key: 'r', shiftKey: false, preventDefault() {} });
+  assert.equal(rotations.length, 2, 'shortcuts are ignored while a modal is open');
+  focusedViewport.destroy();
 });
 
 class MockResizeObserver {
@@ -34,12 +57,18 @@ class MockCanvas {
     this.classes = new Set();
     this.drawCalls = [];
     this.clearCalls = [];
+    this.transformCalls = [];
     this.transforms = [];
     this.capturedPointers = new Set();
     this.context = {
       setTransform: (...args) => this.transforms.push(args),
       clearRect: (...args) => this.clearCalls.push(args),
-      drawImage: (...args) => this.drawCalls.push(args),
+      drawImage: (...args) => { this.drawCalls.push(args); this.transformCalls.push(['drawImage', ...args]); },
+      save: () => this.transformCalls.push(['save']),
+      translate: (...args) => this.transformCalls.push(['translate', ...args]),
+      rotate: (...args) => this.transformCalls.push(['rotate', ...args]),
+      scale: (...args) => this.transformCalls.push(['scale', ...args]),
+      restore: () => this.transformCalls.push(['restore']),
       imageSmoothingEnabled: false,
       imageSmoothingQuality: 'low',
     };
@@ -69,6 +98,7 @@ function setup() {
     devicePixelRatio: 3,
     addEventListener() {},
   };
+  globalThis.document = { querySelector: () => null };
   globalThis.ResizeObserver = MockResizeObserver;
   globalThis.requestAnimationFrame = (callback) => {
     const id = ++frameId;
@@ -108,13 +138,13 @@ test('canvas viewport fits, displays actual size, zooms around a point, pans, an
   assert.equal(canvas.height, 800);
   assert.deepEqual(canvas.transforms.at(-1), [2, 0, 0, 2, 0, 0]);
   assert.equal(viewport.getState().zoom, 3);
-  assert.deepEqual(canvas.drawCalls.at(-1).slice(1), [0, 50, 600, 300]);
+  assert.deepEqual(canvas.drawCalls.at(-1).slice(1), [-300, -150, 600, 300]);
   assert.equal(canvas.context.imageSmoothingQuality, 'high');
 
   viewport.actualSize();
   flushFrames();
   assert.equal(viewport.getState().zoom, 1);
-  assert.deepEqual(canvas.drawCalls.at(-1).slice(1), [200, 150, 200, 100]);
+  assert.deepEqual(canvas.drawCalls.at(-1).slice(1), [-100, -50, 200, 100]);
 
   viewport.zoomIn();
   viewport.zoomOut();
@@ -180,6 +210,16 @@ test('canvas viewport fits, displays actual size, zooms around a point, pans, an
   assert.equal(viewport.getState().zoom, 5);
 
   viewport.setImage(image);
+  viewport.setTransform({ rotation: 90, flipHorizontal: true, flipVertical: false });
+  flushFrames();
+  assert.equal(viewport.getState().zoom, 2.5, 'quarter-turn fit uses swapped working dimensions');
+  assert.deepEqual(viewport.getState().transform, { rotation: 90, flipHorizontal: true, flipVertical: false });
+  assert.deepEqual(canvas.transformCalls.slice(-6).map((call) => call[0]), ['save', 'translate', 'rotate', 'scale', 'drawImage', 'restore']);
+  assert.deepEqual(canvas.transformCalls.slice(-5, -2), [['translate', 600, 250], ['rotate', Math.PI / 2], ['scale', -1, 1]]);
+  assert.deepEqual(canvas.drawCalls.at(-1).slice(1), [-250, -125, 500, 250]);
+
+  viewport.setImage(image);
+  assert.deepEqual(viewport.getState().transform, { rotation: 0, flipHorizontal: false, flipVertical: false }, 'replacement resets transform state');
   viewport.actualSize();
   const beforePinch = viewport.getState().zoom;
   canvas.dispatch('pointerdown', { button: 0, pointerId: 2, pointerType: 'touch', isPrimary: true, clientX: 200, clientY: 180, preventDefault() {} });
@@ -204,6 +244,7 @@ test('canvas viewport fits, displays actual size, zooms around a point, pans, an
   assert.equal(emptyState.hidden, false);
   assert.equal(canvas.drawCalls.length, drawCount);
   assert.ok(canvas.clearCalls.length > 0);
+  assert.deepEqual(viewport.getState().transform, { rotation: 0, flipHorizontal: false, flipVertical: false });
   viewport.destroy();
   assert.equal(resizeObserver.disconnected, true);
   assert.equal(canvas.width, 0);

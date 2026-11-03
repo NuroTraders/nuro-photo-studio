@@ -1,10 +1,12 @@
+import { DEFAULT_TRANSFORM, getTransformedDimensions, normalizeTransform } from './transform-tool.js';
+
 const MIN_ZOOM = 0.01;
 const MAX_ZOOM = 8;
 const ZOOM_STEP = 1.2;
 const MAX_DEVICE_PIXEL_RATIO = 2;
 
 /** Draws a decoded source image into a viewport-sized canvas; it never writes to the source. */
-export function createCanvasViewport(canvas, { emptyState = null, onZoomChange = () => {} } = {}) {
+export function createCanvasViewport(canvas, { emptyState = null, onZoomChange = () => {}, onRotate = () => {} } = {}) {
   const host = canvas.parentElement;
   const context = canvas.getContext('2d', { alpha: true, desynchronized: true });
   if (!host || !context) throw new Error('A canvas viewport needs a mounted canvas with a 2D context.');
@@ -12,6 +14,7 @@ export function createCanvasViewport(canvas, { emptyState = null, onZoomChange =
   const controller = new AbortController();
   const { signal } = controller;
   let image = null;
+  let transform = { ...DEFAULT_TRANSFORM };
   let zoom = 1;
   let panX = 0;
   let panY = 0;
@@ -42,6 +45,7 @@ export function createCanvasViewport(canvas, { emptyState = null, onZoomChange =
   return {
     setImage(nextImage) {
       image = nextImage && nextImage.naturalWidth > 0 && nextImage.naturalHeight > 0 ? nextImage : null;
+      transform = { ...DEFAULT_TRANSFORM };
       canvas.hidden = !image;
       if (emptyState) emptyState.hidden = Boolean(image);
       host.classList.toggle('has-image', Boolean(image));
@@ -60,17 +64,26 @@ export function createCanvasViewport(canvas, { emptyState = null, onZoomChange =
       }
     },
     fitToScreen,
+    setTransform(nextTransform) {
+      transform = normalizeTransform(nextTransform);
+      panX = 0;
+      panY = 0;
+      if (fitMode) zoom = fitZoom();
+      reportZoom();
+      scheduleRender();
+    },
     actualSize,
     zoomIn() { setZoom(zoom * ZOOM_STEP); },
     zoomOut() { setZoom(zoom / ZOOM_STEP); },
     setZoom,
-    getState() { return { zoom, panX, panY, fitMode }; },
+    getState() { return { zoom, panX, panY, fitMode, transform: { ...transform } }; },
     destroy() {
       cancelAnimationFrame(frame);
       frame = 0;
       resizeObserver?.disconnect();
       controller.abort();
       image = null;
+      transform = { ...DEFAULT_TRANSFORM };
       cancelGesture();
       canvas.classList.remove('is-panning');
       canvas.width = 0;
@@ -107,7 +120,8 @@ export function createCanvasViewport(canvas, { emptyState = null, onZoomChange =
 
   function fitZoom() {
     if (!image || width <= 0 || height <= 0) return MIN_ZOOM;
-    return clamp(Math.min(width / image.naturalWidth, height / image.naturalHeight), MIN_ZOOM, MAX_ZOOM);
+    const bounds = getTransformedDimensions(image.naturalWidth, image.naturalHeight, transform);
+    return clamp(Math.min(width / bounds.width, height / bounds.height), MIN_ZOOM, MAX_ZOOM);
   }
 
   function fitToScreen() {
@@ -155,11 +169,17 @@ export function createCanvasViewport(canvas, { emptyState = null, onZoomChange =
     if (!image || width <= 0 || height <= 0) return;
     const drawWidth = image.naturalWidth * zoom;
     const drawHeight = image.naturalHeight * zoom;
-    const x = (width - drawWidth) / 2 + panX;
-    const y = (height - drawHeight) / 2 + panY;
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = 'high';
-    context.drawImage(image, x, y, drawWidth, drawHeight);
+    context.save();
+    try {
+      context.translate(width / 2 + panX, height / 2 + panY);
+      context.rotate(transform.rotation * Math.PI / 180);
+      context.scale(transform.flipHorizontal ? -1 : 1, transform.flipVertical ? -1 : 1);
+      context.drawImage(image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+    } finally {
+      context.restore();
+    }
   }
 
   function reportZoom() {
@@ -247,6 +267,12 @@ export function createCanvasViewport(canvas, { emptyState = null, onZoomChange =
 
   function handleKeyDown(event) {
     if (!image) return;
+    if (event.target === canvas && !event.ctrlKey && !event.altKey && !event.metaKey && !document.querySelector('dialog[open]')
+      && !event.target.isContentEditable && event.key.toLowerCase() === 'r') {
+      onRotate(event.shiftKey ? 'rotate-ccw' : 'rotate-cw');
+      event.preventDefault();
+      return;
+    }
     const distance = event.shiftKey ? 80 : 24;
     if (event.key === '+' || event.key === '=') zoomIn();
     else if (event.key === '-') zoomOut();
