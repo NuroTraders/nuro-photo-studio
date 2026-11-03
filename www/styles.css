@@ -391,10 +391,19 @@ button.quick-action-card:hover { transform: translateY(-2px); border-color: var(
 .editor-workspace-panel { grid-area: workspace; }
 .editor-toolbar-panel { grid-area: toolbar; }
 .editor-properties-panel { grid-area: properties; }
-.editor-canvas-placeholder { min-height: 340px; display: grid; place-items: center; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background-color: var(--color-surface-inset); background-image: linear-gradient(45deg,var(--color-bg-subtle) 25%,transparent 25%),linear-gradient(-45deg,var(--color-bg-subtle) 25%,transparent 25%),linear-gradient(45deg,transparent 75%,var(--color-bg-subtle) 75%),linear-gradient(-45deg,transparent 75%,var(--color-bg-subtle) 75%); background-position: 0 0,0 11px,11px -11px,-11px 0; background-size: 22px 22px; }
-.editor-canvas-placeholder .ui-empty-state { max-width: 360px; }
-.editor-canvas-placeholder.has-image { min-height: 340px; max-height: min(68vh, 760px); padding: 16px; overflow: auto; }
-.editor-image-preview { display: block; max-width: 100%; max-height: min(64vh, 720px); object-fit: contain; image-orientation: from-image; }
+.canvas-viewport-stage { position: relative; width: 100%; height: clamp(280px, 60vh, 680px); min-height: 280px; overflow: hidden; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background-color: var(--color-surface-inset); background-image: linear-gradient(45deg,var(--color-bg-subtle) 25%,transparent 25%),linear-gradient(-45deg,var(--color-bg-subtle) 25%,transparent 25%),linear-gradient(45deg,transparent 75%,var(--color-bg-subtle) 75%),linear-gradient(-45deg,transparent 75%,var(--color-bg-subtle) 75%); background-position: 0 0,0 11px,11px -11px,-11px 0; background-size: 22px 22px; }
+.canvas-viewport-canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.canvas-viewport-canvas[hidden] { display: none; }
+.canvas-viewport-canvas.is-panning { cursor: grabbing; }
+.canvas-viewport-canvas:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -3px; }
+.canvas-viewport-empty { position: absolute; inset: 0; max-width: none; }
+.viewport-controls { display: grid; gap: 20px; }
+.viewport-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
+.viewport-step-button { width: 42px; min-width: 42px; padding: 8px; font-size: var(--text-md); }
+.viewport-zoom-slider { width: clamp(110px, 18vw, 220px); min-height: 38px; accent-color: var(--color-primary); cursor: pointer; }
+.viewport-zoom-label { min-width: 4.5ch; color: var(--color-text); font-size: var(--text-xs); font-variant-numeric: tabular-nums; text-align: center; }
+.viewport-upcoming-tools { display: grid; gap: 2px; }
+.viewport-upcoming-tools .eyebrow { margin-bottom: 8px; }
 .editor-workspace-panel.is-dragging { outline: 2px dashed var(--color-primary); outline-offset: 3px; }
 .editor-import-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
 .editor-file-input { display: none; }
@@ -434,7 +443,7 @@ button.quick-action-card:hover { transform: translateY(-2px); border-color: var(
 
 @media (max-width: 800px) {
   .editor-screen-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; grid-template-areas: "workspace" "toolbar" "properties"; }
-  .editor-canvas-placeholder { min-height: 300px; }
+  .canvas-viewport-stage { height: clamp(280px, 55vh, 560px); }
   .batch-screen-grid, .models-screen-grid { grid-template-columns: minmax(0, 1fr); }
   .batch-queue-panel, .model-list-panel { grid-row: auto; }
 }
@@ -444,6 +453,8 @@ button.quick-action-card:hover { transform: translateY(-2px); border-color: var(
   .print-preview-panel { grid-column: auto; }
   .visual-control-grid { grid-template-columns: minmax(0, 1fr); }
   .status-tile-grid { grid-template-columns: minmax(0, 1fr); }
+  .viewport-toolbar { gap: 7px; }
+  .viewport-zoom-slider { flex: 1 1 120px; width: auto; }
 }
 
 /* Touch sizing and narrow-screen safeguards */

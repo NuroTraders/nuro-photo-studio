@@ -54,7 +54,7 @@ export async function loadImageFile(file) {
       size: file.size,
       orientation: header.orientation,
     });
-    return { document, objectUrl };
+    return { document, objectUrl, image };
   } catch (error) {
     URL.revokeObjectURL(objectUrl);
     if (error instanceof ImageImportError) throw error;

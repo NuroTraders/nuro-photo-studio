@@ -1,9 +1,9 @@
 # Nuro Photo Studio — Handover
 
-**Current milestone:** Phase 2 — Task 1 image import implemented; Phase 1 Task 7 runtime checks remain open
+**Current milestone:** Phase 2 — Task 2 canvas viewport implemented; Phase 1 Task 7 runtime checks remain open
 **Specification baseline:** NPS-TS-001 v1.0 (draft engineering baseline)  
 **App version:** 0.1.0 (see Version history below)
-**State:** Local image loading and preview are implemented; no editing operations or AI behavior yet
+**State:** Local image loading and non-destructive canvas viewing are implemented; no editing operations or AI behavior yet
 
 ## What is here
 
@@ -15,6 +15,7 @@
 - Architecture, privacy/security, initialization, release, model-policy and Phase 0 checklist docs.
 - Shared vanilla DOM components and their API guide in `www/js/ui/components.js` and `docs/UI-COMPONENTS.md`.
 - Dedicated local image loader in `www/js/editor/image-loader.js`, retaining original `File` data and using a releasable object URL for preview.
+- Dedicated Canvas 2D viewport in `www/js/editor/viewport.js` with fit, actual-size, zoom and pan behavior; it draws the loader's decoded image without altering the source file.
 - Validation/build helper scripts and npm lockfile.
 
 ## Deliberate boundaries
@@ -33,7 +34,7 @@
 
 ## Version history
 
-- **0.1.0 (current; checked 2026-11-03)** — Phase 0 starter version, retained through Phase 2 Task 1. Task 1 adds local JPG/JPEG, PNG and WebP import/preview without changing package version. No public GitHub Release/tag is recorded here.
+- **0.1.0 (current; checked 2026-11-03)** — Phase 0 starter version, retained through Phase 2 Task 2. Phase 2 Task 1 adds local JPG/JPEG, PNG and WebP import; Task 2 adds non-destructive Canvas 2D viewing and viewport controls. Neither task changed package version. No public GitHub Release/tag is recorded here.
 
 ## Phase 1 task plan
 
@@ -47,11 +48,11 @@ Completed:
 6. **Responsive design and theme switching:** added early theme restoration from local storage before stylesheet paint, persistent toggle updates, touch target sizing, and narrow-screen safeguards for panels, dialogs and menus. Reduced-motion styles remain enabled.
 7. **Testing and stabilization:** build and structural validation pass; fixed two production asset path defects (theme initializer omitted from build and manifest/icon precache paths hashed by Vite). Static assets now live under `www/public/`. Runtime responsive, dialog, browser console, offline-cache and packaged Electron checks are still outstanding; do not declare Phase 1 complete until those checks are run.
 
-Phase 2 Task 1 is implemented. Next: build the editor canvas viewport (fit, zoom and pan) around the imported image, keeping transforms non-destructive. Separately close the carried Phase 1 Task 7 runtime checks: narrow viewport behavior, browser console, live service-worker/offline behavior, and packaged Electron validation.
+Phase 2 Tasks 1 and 2 are implemented. Task 2 has not yet been reviewed and accepted; do not begin Task 3 until that review is complete. Separately close the carried Phase 1 Task 7 runtime checks: narrow viewport behavior, browser console, live service-worker/offline behavior, and packaged Electron validation.
 
 1. Define an image document that retains the original source and separates working state.
 2. Add validated import for JPG/JPEG, PNG and WebP; report unsupported files and size limits.
-3. Implement canvas viewport, fit/zoom/pan, rotation, crop and undo/redo through isolated engine modules.
+3. After Task 2 acceptance, implement the next approved non-destructive editor operation (crop/rotation requirements should remain isolated from the viewport).
 4. Add before/after comparison and safe export to PNG/JPEG/WebP without overwriting source.
 5. Add preview-resolution rendering and full-resolution export path; test large-image memory failures.
 6. Add interaction and integration checks for browser and Electron.
@@ -77,3 +78,4 @@ Keep UI components thin. Image algorithms belong in `editor/` or `processing/`, 
 - Phase 1 Task 7 stabilization (2026-11-03): `npm ci` completed after network access was approved (npm reported upstream deprecation notices); `npm run check`, `npm run build`, changed-module/Electron syntax checks, manifest JSON parsing, workflow-equivalent PWA shell asset checks and `git diff --check` passed. Build emits Vite's informational warning that the synchronous pre-paint `theme-init.js` script is copied as a static file and is not bundled. Electron development app started and the six feature screens plus Home were visually opened; the saved light theme remained selected after reload. Electron security settings were inspected and retained. The service-worker/manifest/icon mismatch was reproduced by checking production build output and fixed by serving the manifest and icon at the stable paths expected by `sw.js`.
 - Task 7 not yet accepted: IAB/Chrome could not reach the local server during the final browser attempt, so mobile/tablet viewport overflow, browser console, live service-worker registration/cache install/offline reload, and dialog Escape/focus restoration were not dynamically verified. Reduced-motion and visible focus rules were confirmed in CSS; accessible names/labels and screen structure were inspected in the app accessibility tree, but a full keyboard-only audit was not performed. Electron dev launch worked; packaged Electron launch and preload/IPC runtime behavior remain unverified. No failures were observed in the checks that ran; unverified items are not counted as passing.
 - Phase 2 Task 1 (2026-11-03): added strict local JPG/JPEG, PNG and WebP validation, header-based dimension and EXIF orientation inspection, decode/error handling, a 100 MB/80 MP/20,000-pixel-side safety limit, preview loading in the existing Photo Editor, drag-and-drop, image properties, and close/release behavior. The original `File` is retained in the image document and is never rewritten. Added Node built-in tests (`npm test`) without new dependencies. A synthetic PNG was opened in Electron dev; the preview and 1 × 1 dimensions appeared, then Close image returned the workspace to empty. Test fixture was removed after the check. The referenced NPS-TS-001 v1.0 technical specification was not present in this checkout; implementation used the checked-in architecture/privacy guidance and user-supplied requirements. Unit tests mock the browser image decoder, so actual browser decoding of JPG/WebP and a native drag/drop gesture still need manual validation.
+- Phase 2 Task 2 (2026-11-03): replaced the editor's image preview with a dedicated Canvas 2D viewport, reusing the already decoded image element from the Task 1 loader. Added high-DPI rendering capped at 2×, centered fit-to-screen, 100% actual size, bounded zoom, zoom slider and percentage, cursor-anchored wheel zoom, pointer drag pan/touch handling, keyboard viewport shortcuts, resize observation, empty canvas clearing, and teardown of observers, events, pending frames, and canvas resources. No image edits are applied and the original File stays unchanged. Added built-in viewport tests and included them in `npm test`; the initial run exposed and corrected a test expectation for height-limited fit. Current automated checks: `npm test`, `npm run check`, `npm run build`, and `git diff --check` pass. Build retains the previously documented informational Vite warning for static `theme-init.js`. Electron dev opened, and the Photo Editor screen plus local image import/close were exercised. An unintended local image was closed immediately; to avoid using a non-fixture personal image, canvas pixels and zoom/pan/touch/resize interactions were not manually evaluated. The in-app browser showed unstyled shell markup, so it was not used as a browser verification result.

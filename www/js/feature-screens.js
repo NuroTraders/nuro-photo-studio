@@ -67,17 +67,16 @@ function createEditorWorkspace({ image, onOpenImage } = {}) {
   header.append(titleGroup, createBadge({ label: image ? 'IMAGE READY' : 'LOCAL IMAGE' }));
 
   const canvas = document.createElement('div');
-  canvas.className = `editor-canvas-placeholder${image ? ' has-image' : ''}`;
-  if (image) {
-    const preview = document.createElement('img');
-    preview.className = 'editor-image-preview';
-    preview.src = image.objectUrl;
-    preview.alt = `Preview of ${image.document.name}`;
-    preview.draggable = false;
-    canvas.append(preview);
-  } else {
-    canvas.append(placeholder({ icon: '▧', title: 'Your workspace is empty', description: 'Choose a JPG, PNG, or WebP image, or drag one into this workspace.' }));
-  }
+  canvas.className = 'canvas-viewport-stage';
+  canvas.dataset.viewportStage = 'true';
+  const canvasElement = document.createElement('canvas');
+  canvasElement.className = 'canvas-viewport-canvas';
+  canvasElement.dataset.canvasViewport = 'true';
+  canvasElement.hidden = true;
+  const empty = placeholder({ icon: '▧', title: 'Your workspace is empty', description: 'Choose a JPG, PNG, or WebP image, or drag one into this workspace.' });
+  empty.classList.add('canvas-viewport-empty');
+  empty.hidden = Boolean(image);
+  canvas.append(canvasElement, empty);
 
   const fileInput = document.createElement('input');
   fileInput.className = 'editor-file-input';
@@ -232,24 +231,9 @@ const screenLayouts = {
   editor: {
     className: 'editor-screen-grid',
     panels: [
-      { title: 'Image workspace', eyebrow: 'CANVAS', className: 'editor-workspace-panel', badge: 'LOCAL IMAGE', content: () => {
-        const canvas = document.createElement('div');
-        canvas.className = 'editor-canvas-placeholder';
-        canvas.append(placeholder({ icon: '▧', title: 'Your workspace is empty', description: 'Choose a JPG, PNG, or WebP image, or drag one into this workspace.' }));
-        return canvas;
-      } },
-      { title: 'Editing tools', eyebrow: 'TOOLBAR', className: 'editor-toolbar-panel', badge: 'PLANNED', content: () => {
-        const tools = document.createElement('div');
-        tools.className = 'tool-placeholder-list';
-        for (const tool of ['Crop', 'Rotate', 'Adjust', 'Compare', 'Export']) {
-          const item = document.createElement('span');
-          item.className = 'tool-placeholder';
-          item.textContent = tool;
-          tools.append(item);
-        }
-        return tools;
-      } },
-      { title: 'Properties', eyebrow: 'IMAGE DETAILS', className: 'editor-properties-panel', content: () => placeholder({ icon: '⌁', title: 'No image selected', description: 'Dimensions and file information will appear here after you open an image.' }) },
+      { title: 'Image workspace' },
+      { title: 'Canvas viewport', eyebrow: 'VIEW CONTROLS', className: 'editor-toolbar-panel', badge: 'READY', content: createViewportControls },
+      { title: 'Properties' },
     ],
   },
   enhance: {
@@ -316,3 +300,56 @@ const screenLayouts = {
     ],
   },
 };
+
+function createViewportControls() {
+  const controls = document.createElement('div');
+  controls.className = 'viewport-controls';
+  const toolbar = document.createElement('div');
+  toolbar.className = 'viewport-toolbar';
+  toolbar.setAttribute('role', 'group');
+  toolbar.setAttribute('aria-label', 'Canvas zoom controls');
+
+  const zoomOut = createButton({ label: '−', variant: 'secondary', className: 'viewport-step-button' });
+  zoomOut.setAttribute('aria-label', 'Zoom out');
+  zoomOut.dataset.viewportAction = 'zoom-out';
+  const slider = document.createElement('input');
+  slider.className = 'viewport-zoom-slider';
+  slider.type = 'range';
+  slider.min = '1';
+  slider.max = '800';
+  slider.step = '1';
+  slider.value = '100';
+  slider.setAttribute('aria-label', 'Zoom level');
+  slider.dataset.viewportZoom = 'true';
+  const zoomLabel = document.createElement('output');
+  zoomLabel.className = 'viewport-zoom-label';
+  zoomLabel.dataset.viewportZoomLabel = 'true';
+  zoomLabel.setAttribute('aria-live', 'polite');
+  zoomLabel.textContent = '100%';
+  const zoomIn = createButton({ label: '+', variant: 'secondary', className: 'viewport-step-button' });
+  zoomIn.setAttribute('aria-label', 'Zoom in');
+  zoomIn.dataset.viewportAction = 'zoom-in';
+  const fit = createButton({ label: 'Fit to screen', variant: 'secondary' });
+  fit.dataset.viewportAction = 'fit';
+  const actual = createButton({ label: 'Actual size', variant: 'secondary' });
+  actual.dataset.viewportAction = 'actual-size';
+  toolbar.append(zoomOut, slider, zoomLabel, zoomIn, fit, actual);
+  controls.append(toolbar);
+
+  const upcoming = document.createElement('div');
+  upcoming.className = 'viewport-upcoming-tools';
+  const upcomingLabel = document.createElement('p');
+  upcomingLabel.className = 'eyebrow';
+  upcomingLabel.textContent = 'UPCOMING EDITING TOOLS';
+  const tools = document.createElement('div');
+  tools.className = 'tool-placeholder-list';
+  for (const tool of ['Crop', 'Rotate', 'Adjust', 'Compare', 'Export']) {
+    const item = document.createElement('span');
+    item.className = 'tool-placeholder';
+    item.textContent = tool;
+    tools.append(item);
+  }
+  upcoming.append(upcomingLabel, tools);
+  controls.append(upcoming);
+  return controls;
+}

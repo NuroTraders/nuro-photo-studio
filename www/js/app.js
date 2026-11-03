@@ -4,6 +4,7 @@ import { renderFeatureScreen } from './feature-screens.js';
 import { navigationItems } from './navigation.js';
 import { loadImageFile, releaseLoadedImage, ImageImportError } from './editor/image-loader.js';
 import { createAppState } from './core/state.js';
+import { createCanvasViewport } from './editor/viewport.js';
 
 const dashboard = document.querySelector('#main');
 const screenTitle = document.querySelector('#screen-title');
@@ -16,6 +17,7 @@ const appState = createAppState();
 let activeImage = null;
 let importSequence = 0;
 let activeScreen = 'home';
+let editorViewport = null;
 
 renderDashboard(dashboard);
 
@@ -47,6 +49,7 @@ for (const item of navigationItems) {
 function navigateTo(screenId) {
   const item = navigationItems.find((entry) => entry.id === screenId);
   if (!item) return;
+  destroyEditorViewport();
   navigation.querySelectorAll('[data-view]').forEach((entry) => {
     const active = entry.dataset.view === item.id;
     entry.classList.toggle('active', active);
@@ -55,10 +58,8 @@ function navigateTo(screenId) {
   screenTitle.textContent = item.label;
   activeScreen = item.id;
   if (item.id === 'home') renderDashboard(dashboard);
-  else renderFeatureScreen(dashboard, item.id, {
-    image: activeImage,
-    onOpenImage: () => dashboard.querySelector('[data-image-file-input]')?.click(),
-  });
+  else if (item.id === 'editor') renderEditorScreen();
+  else renderFeatureScreen(dashboard, item.id);
   closeMobileNavigation();
 }
 
@@ -70,6 +71,13 @@ dashboard.addEventListener('click', (event) => {
   const button = event.target.closest('[data-navigate]');
   if (button) navigateTo(button.dataset.navigate);
   if (event.target.closest('[data-close-image]')) closeCurrentImage();
+  const viewportAction = event.target.closest('[data-viewport-action]')?.dataset.viewportAction;
+  if (viewportAction) runViewportAction(viewportAction);
+});
+dashboard.addEventListener('input', (event) => {
+  if (event.target.matches('[data-viewport-zoom]')) {
+    editorViewport?.setZoom(Number(event.target.value) / 100);
+  }
 });
 
 dashboard.addEventListener('change', (event) => {
@@ -119,14 +127,12 @@ async function importImage(file) {
       releaseLoadedImage(loadedImage);
       return;
     }
-    releaseLoadedImage(activeImage);
+    const previousImage = activeImage;
     activeImage = loadedImage;
     appState.setActiveDocument(loadedImage.document);
     if (activeScreen !== 'editor') navigateTo('editor');
-    else renderFeatureScreen(dashboard, 'editor', {
-      image: activeImage,
-      onOpenImage: () => dashboard.querySelector('[data-image-file-input]')?.click(),
-    });
+    else renderEditorScreen();
+    releaseLoadedImage(previousImage);
   } catch (error) {
     if (sequence !== importSequence) return;
     const message = error instanceof ImageImportError
@@ -147,18 +153,50 @@ function setImportStatus(message, isError = false) {
 
 function closeCurrentImage() {
   importSequence += 1;
+  destroyEditorViewport();
   releaseLoadedImage(activeImage);
   activeImage = null;
   appState.setActiveDocument(null);
+  renderEditorScreen();
+  dashboard.querySelector('[data-open-image]')?.focus();
+}
+
+function renderEditorScreen() {
+  destroyEditorViewport();
   renderFeatureScreen(dashboard, 'editor', {
+    image: activeImage,
     onOpenImage: () => dashboard.querySelector('[data-image-file-input]')?.click(),
   });
-  dashboard.querySelector('[data-open-image]')?.focus();
+  const canvas = dashboard.querySelector('[data-canvas-viewport]');
+  if (!canvas) return;
+  editorViewport = createCanvasViewport(canvas, { onZoomChange: updateZoomControls });
+  editorViewport.setImage(activeImage?.image ?? null);
+}
+
+function destroyEditorViewport() {
+  editorViewport?.destroy();
+  editorViewport = null;
+}
+
+function runViewportAction(action) {
+  if (!editorViewport) return;
+  if (action === 'zoom-in') editorViewport.zoomIn();
+  else if (action === 'zoom-out') editorViewport.zoomOut();
+  else if (action === 'fit') editorViewport.fitToScreen();
+  else if (action === 'actual-size') editorViewport.actualSize();
+}
+
+function updateZoomControls({ percent }) {
+  const slider = dashboard.querySelector('[data-viewport-zoom]');
+  const output = dashboard.querySelector('[data-viewport-zoom-label]');
+  if (slider) slider.value = String(Math.min(800, Math.max(1, percent)));
+  if (output) output.value = `${percent}%`;
 }
 
 window.addEventListener('pagehide', (event) => {
   if (event.persisted) return;
   importSequence += 1;
+  destroyEditorViewport();
   releaseLoadedImage(activeImage);
   activeImage = null;
 });
