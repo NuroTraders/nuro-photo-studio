@@ -1,10 +1,10 @@
 # Nuro Photo Studio
 
-**Phase 2 early build · app version 0.1.0**
+**Phase 2 core editing · app version 0.2.0**
 
 **Live preview:** [Nuro Photo Studio on GitHub Pages](https://nurotraders.github.io/nuro-photo-studio/)
 
-Independent offline-first photo editor foundation for browser/PWA and Windows Electron. Phase 0 establishes the project, interfaces, security defaults, and delivery workflow. It does not implement editing algorithms, AI inference, model downloads, accounts, or cloud services.
+Independent local-first photo editor for browser/PWA and Windows Electron. Phase 2 core editing includes local image import, Canvas 2D viewing, rotate/flip, crop, session undo/redo, and full-resolution export. AI inference, model downloads, accounts, cloud services, and project saving are not included.
 
 ## Requirements
 
@@ -18,7 +18,7 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. The app includes a responsive dashboard, theme switch, navigation, and shared UI components. In Photo Editor, open a local JPG/JPEG, PNG or WebP image, or drop one into the workspace. The canvas supports fit-to-screen, actual size, zoom controls, wheel zoom, drag panning, 90-degree rotation, horizontal/vertical flips, and non-destructive crop with drag-to-draw, aspect presets, and pixel dimension controls. Undo and redo history covers rotation, flips, applied crops, and crop reset; it is session-only and clears when an image is replaced or closed. Imports are limited to 100 MB, 80 megapixels and 20,000 pixels per side. The image remains on-device and its original file is held unchanged; project saving and export are not yet available.
+Open the local URL printed by Vite. The app includes a responsive dashboard, theme switch, navigation, and shared UI components. In Photo Editor, open a local JPG/JPEG, PNG or WebP image, or drop one into the workspace. The canvas supports fit-to-screen, actual size, zoom controls, wheel zoom, drag panning, 90-degree rotation, horizontal/vertical flips, and non-destructive crop with drag-to-draw, aspect presets, and pixel dimension controls. Undo and redo history covers rotation, flips, applied crops, and crop reset; it is session-only and clears when an image is replaced or closed. Export creates a full-resolution PNG, JPEG, or WebP download from the original decoded image and edit metadata; JPEG/WebP quality can be adjusted. Imports are limited to 100 MB, 80 megapixels and 20,000 pixels per side. The image remains on-device and its original file is held unchanged; project saving is not yet available.
 
 ## PWA preview
 

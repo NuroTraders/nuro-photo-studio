@@ -1,7 +1,7 @@
 import { createBadge, createButton, createCard, createEmptyState } from './ui/components.js';
 
 const screenCopy = {
-  editor: { eyebrow: 'PHOTO WORKSPACE', title: 'Photo Editor', intro: 'Open a local image to view, rotate, flip, and inspect it. The original file remains unchanged.' },
+  editor: { eyebrow: 'PHOTO WORKSPACE', title: 'Photo Editor', intro: 'Open a local image to view, rotate, flip, crop, undo edits, and export a new full-resolution copy. The original file remains unchanged.' },
   enhance: { eyebrow: 'ENHANCE & RESTORE', title: 'Bring out more detail', intro: 'Enhancement and restoration tools are planned. No image processing runs on this screen.' },
   'id-photo': { eyebrow: 'ID PHOTO STUDIO', title: 'Prepare an ID photo', intro: 'Photo sizes, background controls, positioning guides, and print layouts are planned for a later phase.' },
   batch: { eyebrow: 'BATCH PROCESSING', title: 'Work through a set of photos', intro: 'Batch workflows are planned. There is no queue or image processing yet.' },
@@ -77,7 +77,7 @@ export function updateEditorImageUI(container, image) {
     status.setAttribute('role', 'status');
   }
 
-  workspace.querySelectorAll('[data-viewport-action], [data-transform-action], [data-viewport-zoom], [data-crop-action], [data-crop-ratio], [data-crop-width], [data-crop-height], [data-crop-orientation]').forEach((control) => {
+  workspace.querySelectorAll('[data-viewport-action], [data-transform-action], [data-viewport-zoom], [data-crop-action], [data-crop-ratio], [data-crop-width], [data-crop-height], [data-crop-orientation], [data-export-open]').forEach((control) => {
     control.disabled = !image;
   });
 
@@ -120,7 +120,14 @@ function createEditorWorkspace({ image, onOpenImage } = {}) {
   titleGroup.append(eyebrow, title);
   const imageBadge = createBadge({ label: image ? 'IMAGE READY' : 'LOCAL IMAGE' });
   imageBadge.dataset.editorImageBadge = 'true';
-  header.append(titleGroup, imageBadge);
+  const headerActions = document.createElement('div');
+  headerActions.className = 'editor-workspace-header-actions';
+  const exportButton = createButton({ label: 'Export', variant: 'primary', disabled: !image });
+  exportButton.dataset.exportOpen = 'true';
+  exportButton.setAttribute('aria-haspopup', 'dialog');
+  exportButton.title = 'Export edited image';
+  headerActions.append(exportButton, imageBadge);
+  header.append(titleGroup, headerActions);
 
   const canvas = document.createElement('div');
   canvas.className = 'canvas-viewport-stage';
@@ -349,7 +356,7 @@ const screenLayouts = {
       { title: 'About', eyebrow: 'NURO PHOTO STUDIO', content: () => {
         const about = document.createElement('div');
         about.className = 'about-info';
-        about.append(statusTile('App version', '0.1.0', 'Current project version'), textLine('about-copy', 'Private by design. Photo files are not uploaded by this app shell.'));
+        about.append(statusTile('App version', '0.2.0', 'Current project version'), textLine('about-copy', 'Private by design. Photo files are not uploaded by this app shell.'));
         return about;
       } },
     ],
@@ -436,7 +443,7 @@ function createViewportControls(hasImage = false) {
   upcomingLabel.textContent = 'UPCOMING EDITING TOOLS';
   const tools = document.createElement('div');
   tools.className = 'tool-placeholder-list';
-  for (const tool of ['Adjust', 'Compare', 'Export']) {
+  for (const tool of ['Adjust', 'Compare']) {
     const item = document.createElement('span');
     item.className = 'tool-placeholder';
     item.textContent = tool;

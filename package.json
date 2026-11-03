@@ -1,6 +1,6 @@
 {
   "name": "nuro-photo-studio",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Offline-first photo editing foundation for browser/PWA and Windows desktop.",
   "type": "module",
@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
-    "test": "node --test scripts/test-image-loader.mjs scripts/test-viewport.mjs scripts/test-transform.mjs scripts/test-crop.mjs scripts/test-history.mjs",
+    "test": "node --test scripts/test-image-loader.mjs scripts/test-viewport.mjs scripts/test-transform.mjs scripts/test-crop.mjs scripts/test-history.mjs scripts/test-export.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "electron:dev": "concurrently -k \"vite --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && cross-env NPS_DEV_URL=http://127.0.0.1:5173 electron .\"",
     "electron:pack": "npm run build && electron-builder --dir",

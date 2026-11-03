@@ -5,6 +5,10 @@ import { navigationItems } from './navigation.js';
 import { loadImageFile, releaseLoadedImage, ImageImportError } from './editor/image-loader.js';
 import { createAppState } from './core/state.js';
 import { createEditHistory } from './core/edit-history.js';
+import { createDialog } from './ui/components.js';
+import {
+  clampExportQuality, downloadEditedImage, generateExportFilename, getExportFormat, getExportGeometry,
+} from './processing/export-engine.js';
 import { createCanvasViewport } from './editor/viewport.js';
 import { invertCropAspectRatio, swapCropAspectPreset } from './editor/crop-tool.js';
 import {
@@ -85,6 +89,7 @@ dashboard.addEventListener('click', (event) => {
   const button = event.target.closest('[data-navigate]');
   if (button) navigateTo(button.dataset.navigate);
   if (event.target.closest('[data-close-image]')) closeCurrentImage();
+  if (event.target.closest('[data-export-open]')) openExportDialog();
   const viewportAction = event.target.closest('[data-viewport-action]')?.dataset.viewportAction;
   if (viewportAction) runViewportAction(viewportAction);
   const transformAction = event.target.closest('[data-transform-action]')?.dataset.transformAction;
@@ -221,6 +226,123 @@ function closeCurrentImage() {
   if (!updateEditorImageUI(dashboard, null)) renderEditorScreen();
   else updateCropUI();
   dashboard.querySelector('[data-open-image]')?.focus();
+}
+
+function openExportDialog() {
+  if (!activeImage || !editorViewport || cropMode) return;
+  const geometry = getExportGeometry(activeImage.image.naturalWidth, activeImage.image.naturalHeight, activeTransform, activeCrop);
+  const form = document.createElement('div');
+  form.className = 'export-form';
+
+  const dimensions = document.createElement('p');
+  dimensions.className = 'export-dimensions';
+  dimensions.append(document.createTextNode('Export Dimensions: '));
+  const dimensionValue = document.createElement('strong');
+  dimensionValue.textContent = `${geometry.width.toLocaleString()} × ${geometry.height.toLocaleString()} px`;
+  dimensions.append(dimensionValue);
+
+  const formatField = document.createElement('label');
+  formatField.className = 'export-field';
+  const formatLabel = document.createElement('span');
+  formatLabel.textContent = 'Format';
+  const formatSelect = document.createElement('select');
+  formatSelect.className = 'export-format-select';
+  formatSelect.setAttribute('aria-label', 'Export format');
+  for (const [value, text] of [['png', 'PNG'], ['jpeg', 'JPEG'], ['webp', 'WebP']]) {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = text;
+    formatSelect.append(option);
+  }
+  formatField.append(formatLabel, formatSelect);
+
+  const qualityField = document.createElement('label');
+  qualityField.className = 'export-field export-quality-field';
+  const qualityLabel = document.createElement('span');
+  qualityLabel.textContent = 'Quality';
+  const qualityRow = document.createElement('span');
+  qualityRow.className = 'export-quality-row';
+  const qualityInput = document.createElement('input');
+  qualityInput.type = 'range';
+  qualityInput.min = '0.10';
+  qualityInput.max = '1.00';
+  qualityInput.step = '0.01';
+  qualityInput.value = '0.92';
+  qualityInput.setAttribute('aria-label', 'Export quality');
+  const qualityOutput = document.createElement('output');
+  qualityOutput.setAttribute('aria-live', 'polite');
+  qualityOutput.textContent = '92%';
+  qualityRow.append(qualityInput, qualityOutput);
+  qualityField.append(qualityLabel, qualityRow);
+
+  const filenameField = document.createElement('label');
+  filenameField.className = 'export-field';
+  const filenameLabel = document.createElement('span');
+  filenameLabel.textContent = 'Filename';
+  const filenameInput = document.createElement('input');
+  filenameInput.type = 'text';
+  filenameInput.maxLength = 255;
+  filenameInput.autocomplete = 'off';
+  filenameInput.spellcheck = false;
+  filenameInput.setAttribute('aria-label', 'Export filename');
+  filenameField.append(filenameLabel, filenameInput);
+
+  const status = document.createElement('p');
+  status.className = 'export-status';
+  status.setAttribute('role', 'status');
+  status.setAttribute('aria-live', 'polite');
+  form.append(dimensions, formatField, qualityField, filenameField, status);
+
+  function updateFormatControls() {
+    const format = formatSelect.value;
+    const config = getExportFormat(format);
+    qualityField.hidden = config.defaultQuality == null;
+    if (config.defaultQuality != null) qualityInput.value = String(config.defaultQuality);
+    qualityOutput.textContent = `${Math.round(clampExportQuality(qualityInput.value) * 100)}%`;
+    if (!filenameInput.dataset.userEdited) filenameInput.value = generateExportFilename(activeImage.document.name, format);
+  }
+  formatSelect.addEventListener('change', updateFormatControls);
+  qualityInput.addEventListener('input', () => {
+    qualityOutput.textContent = `${Math.round(clampExportQuality(qualityInput.value) * 100)}%`;
+  });
+  filenameInput.addEventListener('input', () => { filenameInput.dataset.userEdited = 'true'; });
+  filenameInput.value = generateExportFilename(activeImage.document.name, formatSelect.value);
+
+  const modal = createDialog({
+    title: 'Export image',
+    description: 'Save a new full-resolution copy. Your original image stays unchanged.',
+    content: form,
+    actions: [
+      { label: 'Cancel', variant: 'secondary' },
+      {
+        label: 'Download / Save', variant: 'primary', closeOnClick: false,
+        async onClick(event, dialogElement) {
+          const saveButton = event.currentTarget;
+          saveButton.disabled = true;
+          status.textContent = 'Preparing full-resolution image…';
+          try {
+            await downloadEditedImage({
+              image: activeImage.image,
+              transform: activeTransform,
+              crop: activeCrop,
+              format: formatSelect.value,
+              quality: Number(qualityInput.value),
+              filename: filenameInput.value,
+            });
+            status.textContent = 'Download started.';
+            dialogElement.close();
+          } catch (error) {
+            status.textContent = error instanceof Error ? error.message : 'The image could not be exported.';
+            saveButton.disabled = false;
+          }
+        },
+      },
+    ],
+  });
+  document.body.append(modal.element);
+  modal.element.addEventListener('close', () => modal.element.remove(), { once: true });
+  modal.open();
+  updateFormatControls();
 }
 
 function renderEditorScreen() {
@@ -360,6 +482,8 @@ function updateCropUI(forceDimensions = false) {
     draftCrop: state?.draftCrop, cropBounds: state?.cropBounds, ratioPreset: activeCropRatio,
     originalOrientation: resolveCropAspectRatio() >= 1 ? 'Landscape' : 'Portrait', forceDimensions,
   });
+  const exportButton = dashboard.querySelector('[data-export-open]');
+  if (exportButton) exportButton.disabled = !activeImage || cropMode;
   updateHistoryUI();
   updateTransformUI();
 }

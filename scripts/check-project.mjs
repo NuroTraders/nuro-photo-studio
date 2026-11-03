@@ -6,7 +6,7 @@ const required = [
   'www/index.html', 'www/styles.css', 'www/sw.js', 'www/public/manifest.webmanifest',
   'www/public/assets/icons/icon.svg', 'www/public/theme-init.js',
   'www/js/editor/image-loader.js', 'www/js/core/image-document.js', 'www/js/feature-screens.js',
-  'www/js/editor/viewport.js', 'www/js/core/edit-history.js', 'scripts/test-image-loader.mjs', 'scripts/test-viewport.mjs', 'scripts/test-history.mjs',
+  'www/js/editor/viewport.js', 'www/js/core/edit-history.js', 'www/js/processing/export-engine.js', 'scripts/test-image-loader.mjs', 'scripts/test-viewport.mjs', 'scripts/test-history.mjs', 'scripts/test-export.mjs',
   'electron/main.cjs', 'electron/preload.cjs', 'electron/electron-builder.yml',
   'README.md', 'HANDOVER.md',
 ];

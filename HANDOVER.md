@@ -1,9 +1,9 @@
 # Nuro Photo Studio — Handover
 
-**Current milestone:** Phase 2 — Task 6 Undo/Redo History Engine implemented and awaiting user manual verification; Phase 1 Task 7 runtime checks remain open
+**Current milestone:** Phase 2 — Task 7 full-resolution Export Engine implemented and awaiting user manual verification; Phase 1 Task 7 runtime checks remain open
 **Specification baseline:** NPS-TS-001 v1.0 (draft engineering baseline)  
-**App version:** 0.1.0 (see Version history below)
-**State:** Local image loading, Canvas 2D viewing, non-destructive quarter-turn rotation/flips, crop preview/apply/reset with drag-to-draw, and bounded session-only undo/redo for committed edits are implemented. Automated checks pass. Runtime verification status is recorded below. No export changes or AI behavior was added.
+**App version:** 0.2.0 (see Version history below)
+**State:** Local image loading, Canvas 2D viewing, non-destructive quarter-turn rotation/flips, crop preview/apply/reset with drag-to-draw, bounded session-only undo/redo for committed edits, and full-resolution local export are implemented. Automated checks pass. Runtime verification status is recorded below. No AI behavior was added.
 
 ## What is here
 
@@ -27,7 +27,7 @@
 - No AI runtime, model weights, inference, model download, or CDN runtime.
 - No image upload or cloud service. Imported photos remain local.
 - Project persistence and recent-project records are not implemented or fabricated. The selected appearance theme is saved locally as a UI preference.
-- Signing, updates, analytics, persistence, ID compliance presets and production image algorithms are deferred.
+- Signing, updates, analytics, project persistence, ID compliance presets, AI, batch processing and advanced image adjustments are deferred.
 
 ## Collaboration rules
 
@@ -37,8 +37,9 @@
 
 ## Version history
 
-- **0.1.0 (current; checked 2026-11-03)** — Phase 0 starter version retained through Phase 2 Task 4. Tasks 1–2 add local image import and Canvas 2D viewing; Task 4 adds non-destructive 90-degree rotation and horizontal/vertical flips. No task changed package version. No public GitHub Release/tag is recorded here.
+- **0.1.0 (2026-11-03)** — Phase 0 starter version retained through Phase 2 Task 6. Tasks 1–2 add local image import and Canvas 2D viewing; Task 4 adds non-destructive 90-degree rotation and horizontal/vertical flips; Tasks 5–6 add crop and committed-edit undo/redo. No public GitHub Release/tag is recorded here.
 - **0.1.0 (2026-11-03)** — Retained for Phase 2 Task 5 Crop Tool; no package version change.
+- **0.2.0 (current; 2026-11-03)** — Phase 2 core editing completion: full-resolution local PNG/JPEG/WebP export with configurable lossy quality, plus the existing import, viewport, transform, crop, and undo/redo editing tools. Original files remain unchanged. No public GitHub Release/tag is recorded here.
 
 ## Phase 1 task plan
 
@@ -191,7 +192,29 @@ No package version change. Task 6 was started only after the user's explicit req
 - `git diff --check` — passed; Git printed working-copy LF-to-CRLF notices.
 - Per the task instruction, no browser, Electron, local server, or manual UI runtime test was launched. Follow the manual verification guide in the final Task 6 report.
 
-No package version change. Do not start Task 7 until the user approves Task 6.
+No package version change at Task 6 completion. The user subsequently requested Task 7.
+
+## Phase 2 Task 7: Full-Resolution Export Engine
+
+**Status:** Implemented; awaiting user manual verification. App version is `0.2.0`.
+
+### Changes
+
+- Replaced the export boundary with a full-resolution off-screen Canvas 2D pipeline. It renders the decoded original using edit metadata and source-space crop bounds; it never captures the viewport canvas.
+- Added PNG, JPEG, and WebP MIME/filename mapping, pixel-aligned crop geometry, rotation-aware output dimensions, horizontal/vertical flips, quality handling, and generated/custom filename normalization.
+- Added an accessible native modal Export dialog with dimensions, format selector, JPEG/WebP quality slider, filename, Cancel/Escape, focus trapping and focus restoration. Downloads are new artifacts; temporary anchor and object URL are removed/revoked after triggering download, and the temporary canvas dimensions are released.
+- Bumped package and lockfile to `0.2.0`; updated the sidebar and About version labels. The version history records the Phase 2 user-visible completion changelog.
+- Added export geometry, encoding settings, filename, render transform and download cleanup tests. Original source bytes and decoded image remain unchanged.
+
+### Validation
+
+- `npm test` — passed (35 tests, 0 failures), including export dimensions under every quarter turn, cropped output, flips, MIME and quality settings, filename generation, canvas transforms, blob encoding, and download URL cleanup.
+- `npm run check` — passed (`Project structure OK`, 21 required files).
+- `npm run build` — passed. Vite printed its existing informational notice that the static `theme-init.js` script cannot be bundled without `type="module"`.
+- `git diff --check` — passed; Git printed working-copy LF-to-CRLF notices.
+- Per the task instruction, no browser, Electron, background server, or manual UI runtime test was launched. Follow the manual verification guide in the final Task 7 report.
+
+Phase 2 core editing is implemented. No Task 8 or additional feature work was started.
 
 ## Decisions and open items
 

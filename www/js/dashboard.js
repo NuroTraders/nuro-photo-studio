@@ -73,6 +73,6 @@ export function renderDashboard(container) {
   const tip = document.createElement('aside');
   tip.className = 'dashboard-tip';
   tip.setAttribute('aria-label', 'Helpful tip');
-  tip.innerHTML = `<span class="tip-icon" aria-hidden="true">✦</span><div><p class="eyebrow">A NOTE ABOUT YOUR PHOTOS</p><p>When editing arrives, your images will be processed locally. No account or upload is required.</p></div><span class="tip-tag">PRIVATE BY DESIGN</span>`;
+  tip.innerHTML = `<span class="tip-icon" aria-hidden="true">✦</span><div><p class="eyebrow">A NOTE ABOUT YOUR PHOTOS</p><p>Editing and exports stay on this device. Your original image remains unchanged.</p></div><span class="tip-tag">PRIVATE BY DESIGN</span>`;
   container.append(tip);
 }

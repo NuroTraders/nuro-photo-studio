@@ -47,6 +47,8 @@ export function createBadge({ label, tone = 'neutral', className = '' } = {}) {
 export function createDialog({ title, description = '', content, actions = [], closeLabel = 'Close dialog' } = {}) {
   const dialog = document.createElement('dialog');
   dialog.className = 'ui-dialog';
+  dialog.setAttribute('role', 'dialog');
+  dialog.setAttribute('aria-modal', 'true');
   dialog.setAttribute('aria-label', title || 'Dialog');
   const panel = document.createElement('div');
   panel.className = 'ui-dialog-panel';

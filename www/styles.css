@@ -341,6 +341,17 @@ button.quick-action-card:hover { transform: translateY(-2px); border-color: var(
 .ui-dialog-close { flex: 0 0 auto; }
 .ui-dialog-description, .ui-dialog-content { color: var(--color-text-muted); font-size: var(--text-sm); line-height: 1.6; }
 .ui-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+.editor-workspace-header-actions { display: inline-flex; align-items: center; gap: 10px; }
+.export-form { display: grid; gap: 16px; }
+.export-dimensions { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
+.export-dimensions strong { color: var(--color-text); font-variant-numeric: tabular-nums; }
+.export-field { display: grid; gap: 7px; color: var(--color-text-muted); font-size: var(--text-xs); font-weight: 650; }
+.export-field[hidden] { display: none; }
+.export-field > input, .export-field > select { width: 100%; min-height: 38px; padding: 8px 10px; border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); color: var(--color-text); background: var(--color-surface-inset); }
+.export-quality-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 13px; color: var(--color-text); }
+.export-quality-row input { width: 100%; accent-color: var(--color-primary); }
+.export-quality-row output { min-width: 42px; font-variant-numeric: tabular-nums; text-align: right; }
+.export-status { min-height: 1.3em; margin: 0; color: var(--color-text-muted); font-size: var(--text-xs); }
 .ui-dropdown { position: relative; display: inline-block; }
 .ui-dropdown-trigger { gap: 9px; }
 .ui-dropdown-trigger::after { content: "▾"; color: var(--color-text-muted); }
