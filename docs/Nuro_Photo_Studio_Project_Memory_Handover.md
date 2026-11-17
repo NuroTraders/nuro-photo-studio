@@ -1,6 +1,6 @@
 # Nuro Photo Studio — Project Memory for New Chats
 
-**Updated:** 2026-11-17 (filters and export resize step implemented)
+**Updated:** 2026-11-17 (Before/After comparison step implemented)
 **Repository:** `NuroTraders/nuro-photo-studio` — https://github.com/NuroTraders/nuro-photo-studio
 **Current version:** `0.2.0`
 **Purpose:** Portable project context, verified repository position, product boundaries, roadmap, and handoff instructions. Read this and the live `HANDOVER.md` before editing.
@@ -13,10 +13,10 @@ Verified in this workspace on 2026-11-17:
 
 - Workspace: `C:\Users\User\Desktop\nuro-photo-studio-phase-0`.
 - Branch: `main`.
-- Base `HEAD`: `c6d317c` (`Add non-destructive color tone adjustments`); resolve the full hash with `git rev-parse HEAD` if needed. The working tree now contains uncommitted filters/resize implementation and documentation changes; check `git status` before continuing.
+- Base `HEAD`: `c6d317c` (`Add non-destructive color tone adjustments`); resolve the full hash with `git rev-parse HEAD` if needed. The working tree contains uncommitted filters/resize and Before/After comparison implementation and documentation changes; check `git status` before continuing.
 - `origin/main` resolves to the same commit. The configured fetch and push remote is `https://github.com/NuroTraders/nuro-photo-studio.git`.
 - `package.json` and the root package entry in `package-lock.json` both report `0.2.0`. Sidebar and About screen strings report `v0.2.0` / `0.2.0`.
-- The branding implementation and user's visual approval note are committed and pushed. At the recorded base commit the tracked tree was clean. At the user's request, the unrelated `fold-project-complete.zip` and root `public/` folder were moved intact to `C:\Users\User\Desktop\Nuro Photo Studio Local Files\`; they are outside the repository. Current uncommitted changes implement deterministic filter presets and bounded export resizing, update source/docs, and retain the accepted color/tone starter.
+- The branding implementation and user's visual approval note are committed and pushed. At the user's request, the unrelated `fold-project-complete.zip` and root `public/` folder were moved intact to `C:\Users\User\Desktop\Nuro Photo Studio Local Files\`; they are outside the repository. Current uncommitted changes implement deterministic filter presets, bounded export resizing, and Before/After comparison, with related source/docs; step 2 was accepted and step 3 awaits review.
 - The last recorded Task 7 checks (run at implementation time, not rerun during this documentation update): `npm test` passed 35/35, `npm run check` passed with 21 required files, `npm run build` passed, and `git diff --check` passed. Vite reports the existing informational notice that static `theme-init.js` cannot be bundled without `type="module"`; Git prints working-copy LF/CRLF notices.
 - The coding agent did not launch a browser/Electron runtime for Task 7 because the task explicitly prohibited it. On 2026-11-17 the user confirmed manual verification of Crop, Undo/Redo, and Export was completed and all three were okay; treat Tasks 5–7 as user-accepted. Do not claim a coding-agent runtime test.
 
@@ -61,7 +61,8 @@ The user supplied the NasirPintu brand kit and Fold toolkit screenshots as visua
 | Task 7: export and version bump | Implemented and accepted by user (2026-11-17) | User confirmed manual verification completed. Full-resolution offscreen render to PNG/JPEG/WebP; quality control for lossy formats; version `0.2.0`. The coding agent ran only required command-line checks. |
 | Export engine behavior | Implemented in `www/js/processing/export-engine.js` | Uses original decoded source and edit state, never viewport canvas; crop coordinates in source space; quarter-turn bounds; blob download and temporary URL cleanup. Large-image memory pressure remains a manual/real-device follow-up. |
 | Color/tone adjustment starter (roadmap step 1) | Implemented and accepted by user (2026-11-17) | Brightness, contrast, saturation range -100..100 with 0 neutral. Live Canvas 2D preview, grouped reset, adjustment-aware undo/redo and matching full-resolution export filters. |
-| Deterministic filters and resize (roadmap step 2) | Implemented; awaiting user review | Original, Grayscale, Sepia, Vintage, Warm and Cool; custom output width/height, aspect lock, export dimension readout, 20,000-pixel-side and 80 MP caps. History and full-resolution export integration. `npm run check`, `npm run build`, and `git diff --check` passed; tests and runtime validation were not run. |
+| Deterministic filters and resize (roadmap step 2) | Implemented and accepted (2026-11-17) | Original, Grayscale, Sepia, Vintage, Warm and Cool; custom output width/height, aspect lock, export dimension readout, 20,000-pixel-side and 80 MP caps. History and full-resolution export integration. Earlier command-line checks passed; tests and runtime validation were not run. |
+| Before/After comparison (roadmap step 3) | Implemented; awaiting user review | Workspace toggle shows untouched decoded source with all edit metadata bypassed; restores prior edited zoom/pan; controls are disabled while comparing. Not part of edit history or export. Tests and runtime checks were not run. |
 
 The user has accepted Tasks 5–7; do not ask them to repeat that confirmation. For future tasks, distinguish implementation, automated checks, user manual verification and release status.
 
@@ -85,12 +86,13 @@ The formal `NPS-TS-001 v1.0 Technical Specification` is referenced in prior proj
 
 The repo’s documents use two naming systems: the recent conversation calls the core editor work “Phase 2 Tasks 1–7”; `docs/INITIALIZATION-PLAN.md` calls the later product areas Phases 2–6. Preserve both labels when useful and do not renumber without user direction.
 
-### Immediate: review classical editing step 2
+### Immediate: review classical editing step 3
 
 1. Phase 2 core editor Tasks 1–7 are accepted by the user (2026-11-17).
 2. The user accepted the brightness/contrast/saturation starter (step 1) on 2026-11-17.
-3. Step 2 is implemented: deterministic Original/Grayscale/Sepia/Vintage/Warm/Cool filters and custom export width/height with aspect lock, dimension readout, and 20,000-pixel-side / 80 MP bounds. Resize affects export only; the Canvas viewport remains fit-to-screen. Filter and resize metadata are included in session history and full-resolution export. `npm run check`, `npm run build`, and `git diff --check` passed. Tests and runtime UI review were not run; step 2 awaits user review.
-4. After step 2 review, the next roadmap feature is Before/After comparison, followed by a separately designed project/session workflow.
+3. Step 2 is accepted by the user. It adds deterministic presets and custom export dimensions with aspect lock, dimension readout, and 20,000-pixel-side / 80 MP bounds; filter and resize metadata participate in history and full-resolution export.
+4. Step 3 is implemented and awaits user review: the Before toggle displays the untouched original decoded image, bypassing edits, and Show edited restores prior edited zoom/pan. Comparison is temporary view state, not history or export state. Tests and runtime validation were not run.
+5. After step 3 review, separately design project/session workflow and storage policy.
 5. Keep the carried Phase 1 runtime/release checks (responsive layouts, browser dialog/focus, service worker/offline behavior, packaged Electron) visible as a separate quality/release follow-up; they do not block planning the next feature unless a new task specifies otherwise.
 
 ### Classical editing continuation (initialization-plan Phase 2)
@@ -103,7 +105,7 @@ The repo’s documents use two naming systems: the recent conversation calls the
 
 ### Comparison and project workflow
 
-- Before/after comparison exists as an architecture/feature slot (`www/js/editor/comparison.js`) and is planned, not implemented.
+- Before/after comparison uses the `www/js/editor/comparison.js` boundary and `www/js/editor/viewport.js`; current comparison is a temporary original/edited toggle, with no split slider yet.
 - Project saving/recent projects are explicitly absent. If later approved, design local storage location, data format, quota, retention, deletion, recovery and consent first; do not silently persist image bytes.
 - Batch processing is represented in the UI but not implemented. Define file limits, per-item errors, cancellation, memory use and explicit output destination before work.
 
@@ -168,4 +170,4 @@ Current Task 7 automated evidence is recorded above and in `HANDOVER.md`; it was
 
 ## 9. Suggested prompt for a new chat
 
-> Read `docs/Nuro_Photo_Studio_Project_Memory_Handover.md`, root `HANDOVER.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/BRANDING.md`, and source relevant to my task. Work only in `NuroTraders/nuro-photo-studio`. Latest pushed base on 2026-11-17 is branch `main`, `HEAD`/`origin/main` `c6d317c` (resolve full hash), version `0.2.0`; step 2 implementation and docs are uncommitted. Preserve the ZIP and `public/` folder at `C:\Users\User\Desktop\Nuro Photo Studio Local Files\`. Branding and core Tasks 1–7 are accepted. The user also accepted the brightness/contrast/saturation adjustment starter (roadmap step 1). Deterministic filters (Original, Grayscale, Sepia, Vintage, Warm, Cool) and export resizing with aspect lock, dimension readout, and 20,000 px / 80 MP caps (step 2) are implemented with history and full-resolution export. `npm run check`, `npm run build`, and `git diff --check` passed; tests and runtime UI checks were not run. Step 2 awaits user review; after approval, next is Before/After comparison. Carried Phase 1 runtime/release checks remain open. Preserve source photos, do not add cloud processing, and do not commit/push unless explicitly asked. Include explicit commit and push commands in implementation reports, but do not execute them without authorization.
+> Read `docs/Nuro_Photo_Studio_Project_Memory_Handover.md`, root `HANDOVER.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/BRANDING.md`, and source relevant to my task. Work only in `NuroTraders/nuro-photo-studio`. The pushed base is branch `main`, `HEAD`/`origin/main` `c6d317c`, version `0.2.0`; check Git status because steps 2 and 3 implementation/docs are uncommitted. Preserve the ZIP and `public/` folder at `C:\Users\User\Desktop\Nuro Photo Studio Local Files\`. Branding and core Tasks 1–7 are accepted. Step 1 adjustments and step 2 deterministic filters/export resize were accepted by the user. Step 3 Before/After is implemented and awaits review: original-source toggle with viewport framing restoration, editing controls disabled while active, no history/export impact. Tests and runtime checks were not run for step 3. After approval, design project/session workflow and local-storage policy. Carried Phase 1 runtime/release checks remain open. Preserve source photos; do not add cloud processing or commit/push unless explicitly asked. Include explicit commit and push commands in implementation reports, but do not execute without authorization.

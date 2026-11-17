@@ -2,6 +2,7 @@ import { createBadge, createButton, createCard, createEmptyState } from './ui/co
 import { ADJUSTMENT_RANGES, DEFAULT_ADJUSTMENTS, hasAdjustmentChanges } from './processing/adjustments.js';
 import { FILTER_PRESETS, normalizeFilter } from './processing/filters.js';
 import { MAX_OUTPUT_SIDE, getResizeOutputDimensions } from './processing/resize.js';
+import { COMPARISON_LABELS } from './editor/comparison.js';
 
 const screenCopy = {
   editor: { eyebrow: 'PHOTO WORKSPACE', title: 'Photo Editor', intro: 'Open a local image to rotate, crop, adjust color, apply a filter, resize the export, undo edits, and save a new copy. The original file remains unchanged.' },
@@ -89,6 +90,18 @@ export function updateEditorImageUI(container, image) {
   return true;
 }
 
+export function updateEditorComparisonUI(container, active, { hasImage = false } = {}) {
+  const button = container.querySelector('[data-comparison-toggle]');
+  if (!button) return;
+  button.disabled = !hasImage;
+  button.textContent = active ? 'Show edited' : 'Before';
+  button.title = active ? 'Show the edited image' : 'Compare with the original image';
+  button.setAttribute('aria-label', active ? COMPARISON_LABELS.after : COMPARISON_LABELS.before);
+  button.setAttribute('aria-pressed', String(active));
+  const workspace = container.querySelector('.editor-workspace-panel');
+  workspace?.classList.toggle('is-comparing', active);
+}
+
 export function updateEditorHistoryUI(container, { canUndo = false, canRedo = false, disabled = false } = {}) {
   const undo = container.querySelector('[data-history-action="undo"]');
   const redo = container.querySelector('[data-history-action="redo"]');
@@ -169,11 +182,16 @@ function createEditorWorkspace({ image, onOpenImage } = {}) {
   imageBadge.dataset.editorImageBadge = 'true';
   const headerActions = document.createElement('div');
   headerActions.className = 'editor-workspace-header-actions';
+  const comparisonButton = createButton({ label: 'Before', variant: 'secondary', className: 'comparison-toggle-button', disabled: !image });
+  comparisonButton.dataset.comparisonToggle = 'true';
+  comparisonButton.setAttribute('aria-label', 'Show original image');
+  comparisonButton.setAttribute('aria-pressed', 'false');
+  comparisonButton.title = 'Compare with the original image';
   const exportButton = createButton({ label: 'Export', variant: 'primary', disabled: !image });
   exportButton.dataset.exportOpen = 'true';
   exportButton.setAttribute('aria-haspopup', 'dialog');
   exportButton.title = 'Export edited image';
-  headerActions.append(exportButton, imageBadge);
+  headerActions.append(comparisonButton, exportButton, imageBadge);
   header.append(titleGroup, headerActions);
 
   const canvas = document.createElement('div');
@@ -739,30 +757,30 @@ function createSvgIcon(paths) {
   return svg;
 }
 
-export function updateEditorCropUI(container, { hasImage, cropMode, hasCrop, draftCrop, cropBounds, ratioPreset = 'freeform', originalOrientation = 'Landscape', forceDimensions = false }) {
+export function updateEditorCropUI(container, { hasImage, cropMode, hasCrop, draftCrop, cropBounds, ratioPreset = 'freeform', originalOrientation = 'Landscape', forceDimensions = false, comparisonMode = false }) {
   const controls = container.querySelectorAll('[data-crop-action]');
   controls.forEach((button) => {
     const action = button.dataset.cropAction;
-    button.disabled = !hasImage;
+    button.disabled = !hasImage || comparisonMode;
     button.hidden = (action === 'begin' && cropMode) || ((action === 'apply' || action === 'cancel') && !cropMode);
-    if (action === 'reset') button.disabled = !hasImage || (!hasCrop && !cropMode);
+    if (action === 'reset') button.disabled = !hasImage || comparisonMode || (!hasCrop && !cropMode);
   });
   const settings = container.querySelector('.crop-settings');
   const ratio = container.querySelector('[data-crop-ratio]');
   if (settings) settings.hidden = !cropMode;
-  if (ratio) { ratio.disabled = !hasImage || !cropMode; ratio.value = ratioPreset; }
+  if (ratio) { ratio.disabled = !hasImage || comparisonMode || !cropMode; ratio.value = ratioPreset; }
   const originalOption = ratio?.querySelector('option[value="original"]');
   if (originalOption) originalOption.textContent = `Original (${originalOrientation})`;
   const orientationButton = container.querySelector('[data-crop-orientation]');
-  if (orientationButton) { orientationButton.disabled = !hasImage || !cropMode; orientationButton.hidden = !cropMode; }
+  if (orientationButton) { orientationButton.disabled = !hasImage || comparisonMode || !cropMode; orientationButton.hidden = !cropMode; }
   for (const [dimension, dataKey] of [['width', 'cropWidth'], ['height', 'cropHeight']]) {
     const input = container.querySelector(`[data-${dataKey.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}]`);
     if (!input) continue;
-    input.disabled = !hasImage || !cropMode;
+    input.disabled = !hasImage || comparisonMode || !cropMode;
     if (cropBounds) input.max = String(Math.floor(cropBounds[dimension]));
     if (draftCrop && (forceDimensions || document.activeElement !== input)) input.value = String(Math.max(1, Math.round(draftCrop[dimension])));
   }
   container.querySelectorAll('[data-transform-action], [data-viewport-action], [data-viewport-zoom], [data-adjustment], [data-adjustment-action], [data-image-filter], [data-resize-width], [data-resize-height], [data-resize-lock], [data-resize-action]').forEach((control) => {
-    control.disabled = !hasImage || cropMode;
+    control.disabled = !hasImage || cropMode || comparisonMode;
   });
 }

@@ -1,6 +1,6 @@
 import { registerServiceWorker } from './bootstrap.js';
 import { renderDashboard } from './dashboard.js';
-import { renderFeatureScreen, updateEditorImageUI, updateEditorCropUI, updateEditorHistoryUI, updateEditorTransformUI, updateEditorAdjustmentsUI, updateEditorFilterUI, updateEditorResizeUI } from './feature-screens.js';
+import { renderFeatureScreen, updateEditorImageUI, updateEditorComparisonUI, updateEditorCropUI, updateEditorHistoryUI, updateEditorTransformUI, updateEditorAdjustmentsUI, updateEditorFilterUI, updateEditorResizeUI } from './feature-screens.js';
 import { navigationItems } from './navigation.js';
 import { loadImageFile, releaseLoadedImage, ImageImportError } from './editor/image-loader.js';
 import { createAppState } from './core/state.js';
@@ -35,6 +35,7 @@ let editorViewport = null;
 let activeTransform = { ...DEFAULT_TRANSFORM };
 let activeAdjustments = { ...DEFAULT_ADJUSTMENTS };
 let activeFilter = 'original';
+let comparisonMode = false;
 let activeResize = null;
 let activeCrop = null;
 let cropMode = false;
@@ -87,6 +88,8 @@ function navigateTo(screenId) {
   const item = navigationItems.find((entry) => entry.id === screenId);
   if (!item) return;
   if (cropMode) editorViewport?.cancelCrop();
+  if (comparisonMode) editorViewport?.setComparisonMode(false);
+  comparisonMode = false;
   cropMode = false;
   destroyEditorViewport();
   navigation.querySelectorAll('[data-view]').forEach((entry) => {
@@ -110,7 +113,8 @@ dashboard.addEventListener('click', (event) => {
   const button = event.target.closest('[data-navigate]');
   if (button) navigateTo(button.dataset.navigate);
   if (event.target.closest('[data-close-image]')) closeCurrentImage();
-  if (event.target.closest('[data-export-open]')) openExportDialog();
+  if (event.target.closest('[data-export-open]') && !comparisonMode) openExportDialog();
+  if (event.target.closest('[data-comparison-toggle]')) toggleComparisonMode();
   const viewportAction = event.target.closest('[data-viewport-action]')?.dataset.viewportAction;
   if (viewportAction) runViewportAction(viewportAction);
   const transformAction = event.target.closest('[data-transform-action]')?.dataset.transformAction;
@@ -137,7 +141,7 @@ dashboard.addEventListener('input', (event) => {
     );
     updateCropUI();
   } else if (event.target.matches('[data-adjustment]')) {
-    if (!activeImage || cropMode) return;
+    if (!activeImage || cropMode || comparisonMode) return;
     activeAdjustments = setAdjustmentValue(activeAdjustments, event.target.dataset.adjustment, event.target.value);
     editorViewport?.setAdjustments(activeAdjustments);
     updateAdjustmentsUI();
@@ -159,12 +163,12 @@ dashboard.addEventListener('change', (event) => {
     return;
   }
   if (event.target.matches('[data-adjustment]')) {
-    if (activeImage && !cropMode && editHistory.push(createEditSnapshot())) updateHistoryUI();
+    if (activeImage && !cropMode && !comparisonMode && editHistory.push(createEditSnapshot())) updateHistoryUI();
     updateAdjustmentsUI();
     return;
   }
   if (event.target.matches('[data-image-filter]')) {
-    if (!activeImage || cropMode) return;
+    if (!activeImage || cropMode || comparisonMode) return;
     activeFilter = normalizeFilter(event.target.value);
     editorViewport?.setFilter(activeFilter);
     if (editHistory.push(createEditSnapshot())) updateHistoryUI();
@@ -172,7 +176,7 @@ dashboard.addEventListener('change', (event) => {
     return;
   }
   if (event.target.matches('[data-resize-width], [data-resize-height]')) {
-    if (activeImage && !cropMode && editHistory.push(createEditSnapshot())) updateHistoryUI();
+    if (activeImage && !cropMode && !comparisonMode && editHistory.push(createEditSnapshot())) updateHistoryUI();
     updateResizeUI(true);
     return;
   }
@@ -227,6 +231,7 @@ async function importImage(file) {
     activeTransform = { ...DEFAULT_TRANSFORM };
     activeAdjustments = { ...DEFAULT_ADJUSTMENTS };
     activeFilter = 'original';
+    comparisonMode = false;
     activeResize = null;
     clearResizeError();
     activeCrop = null;
@@ -274,6 +279,7 @@ function closeCurrentImage() {
   activeTransform = { ...DEFAULT_TRANSFORM };
   activeAdjustments = { ...DEFAULT_ADJUSTMENTS };
   activeFilter = 'original';
+  comparisonMode = false;
   activeResize = null;
   clearResizeError();
   activeCrop = null;
@@ -290,7 +296,7 @@ function closeCurrentImage() {
 }
 
 function openExportDialog() {
-  if (!activeImage || !editorViewport || cropMode) return;
+  if (!activeImage || !editorViewport || cropMode || comparisonMode) return;
   const geometry = getExportGeometry(activeImage.image.naturalWidth, activeImage.image.naturalHeight, activeTransform, activeCrop, activeResize);
   const form = document.createElement('div');
   form.className = 'export-form';
@@ -435,6 +441,7 @@ function renderEditorScreen() {
   editorViewport.setTransform(activeTransform);
   editorViewport.setAdjustments(activeAdjustments);
   editorViewport.setFilter(activeFilter);
+  comparisonMode = false;
   if (activeCrop) editorViewport.setCrop(activeCrop);
   editorViewport.setCropAspectRatio(resolveCropAspectRatio());
   updateCropUI();
@@ -443,6 +450,7 @@ function renderEditorScreen() {
   updateResizeUI();
   updateHistoryUI();
   updateTransformUI();
+  updateComparisonUI();
 }
 
 function destroyEditorViewport() {
@@ -451,7 +459,7 @@ function destroyEditorViewport() {
 }
 
 function runViewportAction(action) {
-  if (!editorViewport || cropMode) return;
+  if (!editorViewport || cropMode || comparisonMode) return;
   if (action === 'zoom-in') editorViewport.zoomIn();
   else if (action === 'zoom-out') editorViewport.zoomOut();
   else if (action === 'fit') editorViewport.fitToScreen();
@@ -459,7 +467,7 @@ function runViewportAction(action) {
 }
 
 function runTransformAction(action) {
-  if (!activeImage || !editorViewport || cropMode) return;
+  if (!activeImage || !editorViewport || cropMode || comparisonMode) return;
   if (action === 'rotate-cw') activeTransform = rotateClockwise(activeTransform);
   else if (action === 'rotate-ccw') activeTransform = rotateCounterClockwise(activeTransform);
   else if (action === 'flip-horizontal') activeTransform = toggleFlipHorizontal(activeTransform);
@@ -475,7 +483,7 @@ function runTransformAction(action) {
 }
 
 function runAdjustmentAction(action) {
-  if (action !== 'reset' || !activeImage || !editorViewport || cropMode || !hasAdjustmentChanges(activeAdjustments)) return;
+  if (action !== 'reset' || !activeImage || !editorViewport || cropMode || comparisonMode || !hasAdjustmentChanges(activeAdjustments)) return;
   activeAdjustments = { ...DEFAULT_ADJUSTMENTS };
   editorViewport.setAdjustments(activeAdjustments);
   if (editHistory.push(createEditSnapshot())) updateHistoryUI();
@@ -483,7 +491,7 @@ function runAdjustmentAction(action) {
 }
 
 function runResizeAction(action) {
-  if (action !== 'reset' || !activeImage || cropMode || !activeResize) return;
+  if (action !== 'reset' || !activeImage || cropMode || comparisonMode || !activeResize) return;
   activeResize = null;
   clearResizeError();
   clearResizeError();
@@ -492,7 +500,7 @@ function runResizeAction(action) {
 }
 
 function runCropAction(action) {
-  if (!activeImage || !editorViewport) return;
+  if (!activeImage || !editorViewport || comparisonMode) return;
   if (action === 'begin') {
     editorViewport.setCropAspectRatio(resolveCropAspectRatio());
     cropMode = editorViewport.beginCrop();
@@ -529,12 +537,12 @@ function updateHistoryUI() {
   updateEditorHistoryUI(dashboard, {
     canUndo: editHistory.canUndo,
     canRedo: editHistory.canRedo,
-    disabled: !activeImage || cropMode,
+    disabled: !activeImage || cropMode || comparisonMode,
   });
 }
 
 function runHistoryAction(action) {
-  if (!activeImage || cropMode || activeScreen !== 'editor') return;
+  if (!activeImage || cropMode || comparisonMode || activeScreen !== 'editor') return;
   const restored = action === 'undo' ? editHistory.undo() : action === 'redo' ? editHistory.redo() : null;
   if (!restored) return;
   activeTransform = {
@@ -567,13 +575,13 @@ function updateTransformUI() {
 
 function updateAdjustmentsUI() {
   if (activeScreen === 'editor') {
-    updateEditorAdjustmentsUI(dashboard, activeAdjustments, { hasImage: Boolean(activeImage), disabled: cropMode });
+    updateEditorAdjustmentsUI(dashboard, activeAdjustments, { hasImage: Boolean(activeImage), disabled: cropMode || comparisonMode });
   }
 }
 
 function updateFilterUI() {
   if (activeScreen === 'editor') {
-    updateEditorFilterUI(dashboard, activeFilter, { hasImage: Boolean(activeImage), disabled: cropMode });
+    updateEditorFilterUI(dashboard, activeFilter, { hasImage: Boolean(activeImage), disabled: cropMode || comparisonMode });
   }
 }
 
@@ -581,14 +589,14 @@ function updateResizeUI(force = false) {
   if (activeScreen !== 'editor') return;
   const base = getBaseOutputDimensions();
   updateEditorResizeUI(dashboard, {
-    hasImage: Boolean(activeImage), disabled: cropMode,
+    hasImage: Boolean(activeImage), disabled: cropMode || comparisonMode,
     baseWidth: base?.width ?? 0, baseHeight: base?.height ?? 0,
     resize: activeResize, force,
   });
 }
 
 function updateResizeFromInput(input) {
-  if (!activeImage || cropMode) return;
+  if (!activeImage || cropMode || comparisonMode) return;
   const widthInput = dashboard.querySelector('[data-resize-width]');
   const heightInput = dashboard.querySelector('[data-resize-height]');
   const lock = dashboard.querySelector('[data-resize-lock]');
@@ -638,17 +646,28 @@ function updateCropUI(forceDimensions = false) {
   if (activeScreen !== 'editor') return;
   const state = editorViewport?.getState();
   updateEditorCropUI(dashboard, {
-    hasImage: Boolean(activeImage), cropMode, hasCrop: Boolean(activeCrop),
+    hasImage: Boolean(activeImage), cropMode, hasCrop: Boolean(activeCrop), comparisonMode,
     draftCrop: state?.draftCrop, cropBounds: state?.cropBounds, ratioPreset: activeCropRatio,
     originalOrientation: resolveCropAspectRatio() >= 1 ? 'Landscape' : 'Portrait', forceDimensions,
   });
   const exportButton = dashboard.querySelector('[data-export-open]');
-  if (exportButton) exportButton.disabled = !activeImage || cropMode;
+  if (exportButton) exportButton.disabled = !activeImage || cropMode || comparisonMode;
   updateHistoryUI();
   updateTransformUI();
   updateAdjustmentsUI();
   updateFilterUI();
   updateResizeUI();
+  updateComparisonUI();
+}
+
+function toggleComparisonMode() {
+  if (!activeImage || !editorViewport || cropMode) return;
+  comparisonMode = editorViewport.setComparisonMode(!comparisonMode);
+  updateCropUI();
+}
+
+function updateComparisonUI() {
+  if (activeScreen === 'editor') updateEditorComparisonUI(dashboard, comparisonMode, { hasImage: Boolean(activeImage) });
 }
 
 function resolveCropAspectRatio() {
@@ -681,6 +700,7 @@ window.addEventListener('pagehide', (event) => {
   activeTransform = { ...DEFAULT_TRANSFORM };
   activeAdjustments = { ...DEFAULT_ADJUSTMENTS };
   activeFilter = 'original';
+  comparisonMode = false;
   activeResize = null;
   activeCrop = null;
   activeCropRatio = 'freeform';
@@ -703,7 +723,7 @@ document.addEventListener('keydown', (event) => {
   const isUndo = historyModifier && !event.shiftKey && event.key.toLowerCase() === 'z';
   const isRedo = historyModifier && (event.key.toLowerCase() === 'y' || (event.shiftKey && event.key.toLowerCase() === 'z'));
   const target = event.target;
-  if (!event.defaultPrevented && (isUndo || isRedo) && activeScreen === 'editor' && activeImage && !cropMode
+  if (!event.defaultPrevented && (isUndo || isRedo) && activeScreen === 'editor' && activeImage && !cropMode && !comparisonMode
     && !event.altKey && !document.querySelector('dialog[open]')
     && !target?.matches?.('input, textarea, select, [contenteditable="true"]') && !target?.isContentEditable) {
     runHistoryAction(isUndo ? 'undo' : 'redo');
@@ -726,7 +746,7 @@ document.addEventListener('keydown', (event) => {
       return;
     }
   }
-  if (!event.defaultPrevented && activeScreen === 'editor' && activeImage && event.key.toLowerCase() === 'r'
+  if (!event.defaultPrevented && activeScreen === 'editor' && activeImage && !comparisonMode && event.key.toLowerCase() === 'r'
     && !event.ctrlKey && !event.altKey && !event.metaKey && !document.querySelector('dialog[open]')) {
     const workspace = dashboard.querySelector('.editor-workspace-panel');
     const target = event.target;

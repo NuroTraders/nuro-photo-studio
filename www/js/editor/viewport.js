@@ -5,6 +5,7 @@ import {
 } from './crop-tool.js';
 import { DEFAULT_ADJUSTMENTS, normalizeAdjustments } from '../processing/adjustments.js';
 import { getCanvasFilter, normalizeFilter } from '../processing/filters.js';
+import { normalizeComparisonMode } from './comparison.js';
 
 const MIN_ZOOM = 0.01;
 const MAX_ZOOM = 8;
@@ -28,6 +29,8 @@ export function createCanvasViewport(canvas, {
   let transform = { ...DEFAULT_TRANSFORM };
   let adjustments = { ...DEFAULT_ADJUSTMENTS };
   let filter = 'original';
+  let comparisonMode = false;
+  let comparisonViewState = null;
   let crop = null;
   let cropMode = false;
   let draftCrop = null;
@@ -68,6 +71,8 @@ export function createCanvasViewport(canvas, {
       transform = { ...DEFAULT_TRANSFORM };
       adjustments = { ...DEFAULT_ADJUSTMENTS };
       filter = 'original';
+      comparisonMode = false;
+      comparisonViewState = null;
       crop = null;
       cropMode = false;
       draftCrop = null;
@@ -144,6 +149,27 @@ export function createCanvasViewport(canvas, {
       filter = normalizeFilter(nextFilter);
       scheduleRender();
     },
+    setComparisonMode(enabled) {
+      const nextMode = normalizeComparisonMode(enabled) && Boolean(image) && !cropMode;
+      if (nextMode === comparisonMode) return comparisonMode;
+      if (nextMode) {
+        comparisonViewState = { zoom, panX, panY, fitMode };
+        comparisonMode = true;
+        fitMode = true;
+        zoom = fitZoom();
+        panX = 0;
+        panY = 0;
+      } else {
+        comparisonMode = false;
+        if (comparisonViewState) ({ zoom, panX, panY, fitMode } = comparisonViewState);
+        if (fitMode) zoom = fitZoom();
+        comparisonViewState = null;
+      }
+      updateCanvasAriaLabel();
+      reportZoom();
+      scheduleRender();
+      return comparisonMode;
+    },
     actualSize,
     zoomIn() { setZoom(zoom * ZOOM_STEP); },
     zoomOut() { setZoom(zoom / ZOOM_STEP); },
@@ -154,6 +180,7 @@ export function createCanvasViewport(canvas, {
         transform: { ...transform },
         adjustments: { ...adjustments },
         filter,
+        comparisonMode,
         crop: crop ? { ...crop } : null,
         cropMode,
         draftCrop: draftCrop ? { ...draftCrop } : null,
@@ -170,6 +197,8 @@ export function createCanvasViewport(canvas, {
       transform = { ...DEFAULT_TRANSFORM };
       adjustments = { ...DEFAULT_ADJUSTMENTS };
       filter = 'original';
+      comparisonMode = false;
+      comparisonViewState = null;
       crop = null;
       cropMode = false;
       draftCrop = null;
@@ -217,6 +246,7 @@ export function createCanvasViewport(canvas, {
   }
 
   function viewportBounds() {
+    if (comparisonMode) return { width: image.naturalWidth, height: image.naturalHeight };
     const full = getTransformedDimensions(image.naturalWidth, image.naturalHeight, transform);
     if (cropMode) return full;
     const visualCrop = getVisualCrop();
@@ -316,7 +346,9 @@ export function createCanvasViewport(canvas, {
 
   function updateCanvasAriaLabel() {
     canvas.setAttribute('aria-label', image
-      ? `Image viewport displaying ${image.alt || 'the imported image'}. Use the zoom controls to inspect it.`
+      ? comparisonMode
+        ? `Before comparison showing the untouched original image ${image.alt || ''}. Activate Show edited to return to your changes.`
+        : `Image viewport displaying ${image.alt || 'the imported image'}. Use the zoom controls to inspect it.`
       : 'Image viewport is empty.');
   }
 
@@ -367,6 +399,19 @@ export function createCanvasViewport(canvas, {
     frame = 0;
     context.clearRect(0, 0, width, height);
     if (!image || width <= 0 || height <= 0) return;
+    if (comparisonMode) {
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = 'high';
+      context.save();
+      try {
+        context.translate(width / 2, height / 2);
+        context.scale(zoom, zoom);
+        context.drawImage(image, -image.naturalWidth / 2, -image.naturalHeight / 2, image.naturalWidth, image.naturalHeight);
+      } finally {
+        context.restore();
+      }
+      return;
+    }
     const fullBounds = getTransformedDimensions(image.naturalWidth, image.naturalHeight, transform);
     const visualCrop = getVisualCrop();
     context.imageSmoothingEnabled = true;
@@ -442,7 +487,7 @@ export function createCanvasViewport(canvas, {
   }
 
   function handleWheel(event) {
-    if (!image) return;
+    if (!image || comparisonMode) return;
     event.preventDefault();
     const rect = host.getBoundingClientRect();
     const anchorX = event.clientX - rect.left;
@@ -453,7 +498,7 @@ export function createCanvasViewport(canvas, {
   }
 
   function handlePointerDown(event) {
-    if (!image || event.button !== 0 || pointers.has(event.pointerId)) return;
+    if (!image || comparisonMode || event.button !== 0 || pointers.has(event.pointerId)) return;
     event.preventDefault();
     if (cropMode) {
       const point = canvasPoint(event);
@@ -563,7 +608,7 @@ export function createCanvasViewport(canvas, {
   }
 
   function handleKeyDown(event) {
-    if (!image) return;
+    if (!image || comparisonMode) return;
     if (cropMode) {
       if (event.key === 'Escape') { cancelCrop(); event.preventDefault(); return; }
       if (event.key === 'Enter') { applyCrop(); event.preventDefault(); return; }

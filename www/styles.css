@@ -398,6 +398,8 @@ button.quick-action-card:hover { transform: translateY(-2px); border-color: var(
 .ui-dialog-description, .ui-dialog-content { color: var(--color-text-muted); font-size: var(--text-sm); line-height: 1.6; }
 .ui-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
 .editor-workspace-header-actions { display: inline-flex; align-items: center; gap: 10px; }
+.comparison-toggle-button[aria-pressed="true"] { color: var(--color-primary); border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface)); }
+.editor-workspace-panel.is-comparing .canvas-viewport-stage::after { content: "ORIGINAL · BEFORE"; position: absolute; top: 12px; left: 12px; z-index: 2; padding: 5px 8px; border: 1px solid var(--color-border-strong); border-radius: 999px; color: var(--color-text); background: color-mix(in srgb, var(--color-surface) 88%, transparent); font-size: 10px; font-weight: 750; letter-spacing: .08em; pointer-events: none; }
 .export-form { display: grid; gap: 16px; }
 .export-dimensions { margin: 0; color: var(--color-text-muted); font-size: var(--text-sm); }
 .export-dimensions strong { color: var(--color-text); font-variant-numeric: tabular-nums; }
