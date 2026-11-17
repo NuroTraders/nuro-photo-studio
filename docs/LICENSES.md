@@ -1,12 +1,22 @@
 # License inventory
 
-## Starter code
+## Project-authored work
 
-- Project-authored source and documentation: MIT License (see repository `LICENSE`).
-- Runtime dependencies: none in Phase 0.
-- Development/packaging dependencies: see `package.json`; each package retains its own license. Generate and review a license inventory before public distribution.
+- Project source and documentation: MIT License (see repository `LICENSE`).
+- Creator portrait `www/public/nasirpintu.jpg`: supplied by the project owner for creator attribution in this application.
 - Fonts: system fonts only; no font files or remote font fetches.
-- Models: none.
-- Icons: project-authored SVG.
+- Editing icons and controls: native/project-authored markup and SVG; no icon package is bundled.
+- Image operations: native Canvas 2D and browser Blob APIs; no third-party image editing/export library is bundled.
 
-Third-party model weights, datasets, logos, photos and other assets require independent license review before inclusion.
+## Build and desktop toolchain
+
+These are development/packaging dependencies, not runtime image-processing dependencies. Each retains its own MIT license; package versions and transitive dependencies are recorded in `package-lock.json`.
+
+- Vite
+- Electron
+- Electron Builder
+- Concurrently
+- cross-env
+- wait-on
+
+No React or Lucide package is included. AI collaboration credits are attribution, not runtime dependencies or a claim that those providers process user images. Any future model weights, datasets, logos, photos or other third-party assets require independent license review before inclusion.

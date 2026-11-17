@@ -6,6 +6,7 @@ import { loadImageFile, releaseLoadedImage, ImageImportError } from './editor/im
 import { createAppState } from './core/state.js';
 import { createEditHistory } from './core/edit-history.js';
 import { createDialog } from './ui/components.js';
+import { createAboutCreditsContent } from './branding/about-credits.js';
 import {
   clampExportQuality, downloadEditedImage, generateExportFilename, getExportFormat, getExportGeometry,
 } from './processing/export-engine.js';
@@ -36,6 +37,20 @@ let originalCropRatioInverted = false;
 const editHistory = createEditHistory();
 
 renderDashboard(dashboard);
+
+document.querySelectorAll('[data-open-about]').forEach((trigger) => {
+  trigger.addEventListener('click', () => {
+    const modal = createDialog({
+      title: 'About Nuro Photo Studio',
+      description: 'Creator story, project credits, and privacy promise.',
+      content: createAboutCreditsContent(),
+    });
+    modal.element.classList.add('about-credits-dialog');
+    document.body.append(modal.element);
+    modal.element.addEventListener('close', () => modal.element.remove(), { once: true });
+    modal.open();
+  });
+});
 
 let currentGroup = '';
 for (const item of navigationItems) {

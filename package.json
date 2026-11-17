@@ -3,6 +3,9 @@
   "version": "0.2.0",
   "private": true,
   "description": "Offline-first photo editing foundation for browser/PWA and Windows desktop.",
+  "author": "NasirPintu <https://github.com/nasiropintu>",
+  "homepage": "https://github.com/nasiropintu",
+  "license": "MIT",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {

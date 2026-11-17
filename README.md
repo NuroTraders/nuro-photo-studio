@@ -111,3 +111,32 @@ See [docs/PHASE-0-CHECKLIST.md](docs/PHASE-0-CHECKLIST.md) for a reviewable chec
 ## License
 
 MIT for the starter implementation; see [LICENSE](LICENSE). Future model weights and third-party assets require separate license review.
+
+---
+
+## Creator & Vision
+
+**NasirPintu** (Mohammad Nasiruddin Pintu)<br>
+*Creator, Product Architect & Open-Source Builder*
+
+* **GitHub:** [@nasiropintu](https://github.com/nasiropintu)
+* **X (Twitter):** [@nasiropintu](https://x.com/nasiropintu)
+* **Instagram:** [@the_np2](https://www.instagram.com/the_np2/)
+* **Facebook:** [mohammadnasiruddin.pintu](https://www.facebook.com/mohammadnasiruddin.pintu/)
+
+Building free, private-by-design tools that empower people without paywalls, subscriptions, or data tracking.
+
+## Human + AI Collaboration Credits
+
+Conceived and guided by **NasirPintu**, with assistance from the models and agents credited in the application:
+
+* **Gemini** *(Google DeepMind)* — Architecture and agentic workflows.
+* **Manus** *(Manus AI)* — Planning and synthesis.
+* **ChatGPT** *(OpenAI)* — Logic and reasoning.
+* **DeepSeek** — Algorithmic problem-solving.
+* **Claude** *(Anthropic)* — Systems reasoning and technical drafting.
+* **Vibe by Mistral** *(Mistral AI)* — Code generation and implementation support.
+
+## Open-Source Community Credits
+
+The application uses a native web stack and Canvas 2D APIs. Its direct build and desktop toolchain includes [Vite](https://vite.dev/), [Electron](https://www.electronjs.org/), [Electron Builder](https://www.electron.build/), [Concurrently](https://github.com/open-cli-tools/concurrently), [cross-env](https://github.com/kentcdodds/cross-env), and [wait-on](https://github.com/jeffbski/wait-on). These packages retain their own MIT licenses. No React, Lucide, or third-party image editing/export library is used by this project.
