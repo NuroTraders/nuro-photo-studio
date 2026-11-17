@@ -18,7 +18,7 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. The app includes a responsive dashboard, theme switch, navigation, and shared UI components. In Photo Editor, open a local JPG/JPEG, PNG or WebP image, or drop one into the workspace. The canvas supports fit-to-screen, actual size, zoom controls, wheel zoom, drag panning, 90-degree rotation, horizontal/vertical flips, and non-destructive crop with drag-to-draw, aspect presets, and pixel dimension controls. Use **Before** in the workspace header to compare the untouched original image; **Show edited** restores the transformed and edited view with its previous zoom and pan. Editing controls are disabled while the original is shown. Brightness, contrast, and saturation use live preview sliders; deterministic Original, Grayscale, Sepia, Vintage, Warm, and Cool filters are available. Resize controls set output width and height, lock aspect ratio by default, and leave the viewport preview independent of output resolution. Undo and redo history covers rotation, flips, crop, adjustments, filters, and resize; it is session-only and clears when an image is replaced or closed. Export creates a full-resolution PNG, JPEG, or WebP download from the original decoded image and edit metadata; JPEG/WebP quality can be adjusted. Output is limited to 80 megapixels and 20,000 pixels per side. Imports are limited to 100 MB, 80 megapixels and 20,000 pixels per side. The image remains on-device and its original file is held unchanged; project saving is not yet available.
+Open the local URL printed by Vite. The app includes a responsive dashboard, theme switch, navigation, and shared UI components. In Photo Editor, open a local JPG/JPEG, PNG or WebP image, or drop one into the workspace. The canvas supports fit-to-screen, actual size, zoom controls, wheel zoom, drag panning, 90-degree rotation, horizontal/vertical flips, and non-destructive crop with drag-to-draw, aspect presets, and pixel dimension controls. Use **Before** in the workspace header to compare the untouched original image; **Show edited** restores the transformed and edited view with its previous zoom and pan. Editing controls are disabled while the original is shown. Brightness, contrast, and saturation use live preview sliders; deterministic Original, Grayscale, Sepia, Vintage, Warm, and Cool filters are available. Resize controls set output width and height, lock aspect ratio by default, and leave the viewport preview independent of output resolution. Undo and redo history covers rotation, flips, crop, adjustments, filters, and resize; it is session-only and clears when an image is replaced or closed. Export creates a full-resolution PNG, JPEG, or WebP download from the original decoded image and edit metadata; JPEG/WebP quality can be adjusted. Output is limited to 80 megapixels and 20,000 pixels per side. Imports are limited to 100 MB, 80 megapixels and 20,000 pixels per side. The **ID Photo Studio** accepts custom photo width/height in millimeters, approximate framing guides, and A4, Letter, or custom print sheets. It renders a 300 DPI sheet and opens the print dialog. No country-specific ID size or compliance preset is included; see [docs/ID-PHOTO.md](docs/ID-PHOTO.md). The image remains on-device and its original file is held unchanged; project saving is not yet available.
 
 ## PWA preview
 
@@ -49,7 +49,7 @@ www/js/core/         State, event bus, document/history and queue boundaries
 www/js/ui/           Reusable accessible DOM components
 www/js/editor/       Loader, canvas and viewport boundaries
 www/js/processing/   Color/tone adjustment and export logic; filter/resize boundaries
-www/js/features/     Enhancement, ID photo, print and upscaling feature slots
+www/js/features/     Enhancement, ID photo/print sheet, and upscaling features
 www/js/ai/           Future runtime/provider/model boundaries (stubs only)
 www/js/workers/      Future worker entry points
 electron/            Main, preload and electron-builder configuration
@@ -84,7 +84,7 @@ No code, package, asset, or configuration is imported from or coupled to `NuroTr
 - Add new preload methods only for narrowly scoped, validated tasks. Never expose raw `ipcRenderer`, filesystem, shell, or generic IPC methods.
 - CSP currently blocks remote scripts, objects, and framing. If a future local dependency requires additional origins, document and narrowly scope the change.
 - A future model manager must require explicit user action, show license/source/size, verify SHA-256, and store models separately from the app shell. Do not precache large model binaries.
-- Official ID-photo rules vary by issuing authority. Country presets must cite authoritative sources and a verification date; avoid claiming compliance until verified.
+- ID Photo Studio currently has user-defined photo dimensions and generic print-paper formats only. It has no country-specific ID-size presets. Any future jurisdiction preset must cite current authoritative requirements and a verification date; avoid claiming compliance until verified.
 
 ## Phase 0 acceptance
 

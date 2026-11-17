@@ -12,7 +12,7 @@ export const navigationItems = [
 export const dashboardQuickActions = [
   { id: 'editor', title: 'Photo Editor', description: 'Open the editing workspace for a photo.', icon: '▧', status: 'Available', available: true },
   { id: 'enhance', title: 'Enhance & Restore', description: 'Improve detail and restore older images.', icon: '✧', status: 'Coming soon', available: false },
-  { id: 'id-photo', title: 'ID Photo Studio', description: 'Prepare a photo for an ID or passport.', icon: '▣', status: 'Coming soon', available: false },
+  { id: 'id-photo', title: 'ID Photo Studio', description: 'Set physical photo dimensions and print a sheet of copies.', icon: '▣', status: 'Available', available: true },
   { id: 'batch', title: 'Batch Processing', description: 'Apply a workflow to a group of photos.', icon: '▤', status: 'Coming soon', available: false },
 ];
 

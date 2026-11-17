@@ -1,6 +1,6 @@
 # Nuro Photo Studio — Project Memory for New Chats
 
-**Updated:** 2026-11-17 (Before/After comparison step implemented)
+**Updated:** 2026-11-17 (ID Photo Studio and print sheet step implemented)
 **Repository:** `NuroTraders/nuro-photo-studio` — https://github.com/NuroTraders/nuro-photo-studio
 **Current version:** `0.2.0`
 **Purpose:** Portable project context, verified repository position, product boundaries, roadmap, and handoff instructions. Read this and the live `HANDOVER.md` before editing.
@@ -13,10 +13,10 @@ Verified in this workspace on 2026-11-17:
 
 - Workspace: `C:\Users\User\Desktop\nuro-photo-studio-phase-0`.
 - Branch: `main`.
-- Base `HEAD`: `c6d317c` (`Add non-destructive color tone adjustments`); resolve the full hash with `git rev-parse HEAD` if needed. The working tree contains uncommitted filters/resize and Before/After comparison implementation and documentation changes; check `git status` before continuing.
+- Base `HEAD`: `514a168` (`Add original and edited comparison`); full hash `514a168958cf39ab8343c845505c31793ab3b943`. The working tree contains uncommitted ID Photo Studio/print-sheet implementation and documentation changes; check `git status` before continuing.
 - `origin/main` resolves to the same commit. The configured fetch and push remote is `https://github.com/NuroTraders/nuro-photo-studio.git`.
 - `package.json` and the root package entry in `package-lock.json` both report `0.2.0`. Sidebar and About screen strings report `v0.2.0` / `0.2.0`.
-- The branding implementation and user's visual approval note are committed and pushed. At the user's request, the unrelated `fold-project-complete.zip` and root `public/` folder were moved intact to `C:\Users\User\Desktop\Nuro Photo Studio Local Files\`; they are outside the repository. Current uncommitted changes implement deterministic filter presets, bounded export resizing, and Before/After comparison, with related source/docs; step 2 was accepted and step 3 awaits review.
+- The branding, deterministic filters/export resizing, and Before/After comparison are committed and pushed through `514a168`. At the user's request, the unrelated `fold-project-complete.zip` and root `public/` folder were moved intact to `C:\Users\User\Desktop\Nuro Photo Studio Local Files\`; they are outside the repository. Current uncommitted changes implement ID Photo Studio/print sheets and update source/docs. Steps 2 and 3 were accepted; step 4 awaits review.
 - The last recorded Task 7 checks (run at implementation time, not rerun during this documentation update): `npm test` passed 35/35, `npm run check` passed with 21 required files, `npm run build` passed, and `git diff --check` passed. Vite reports the existing informational notice that static `theme-init.js` cannot be bundled without `type="module"`; Git prints working-copy LF/CRLF notices.
 - The coding agent did not launch a browser/Electron runtime for Task 7 because the task explicitly prohibited it. On 2026-11-17 the user confirmed manual verification of Crop, Undo/Redo, and Export was completed and all three were okay; treat Tasks 5–7 as user-accepted. Do not claim a coding-agent runtime test.
 
@@ -62,7 +62,8 @@ The user supplied the NasirPintu brand kit and Fold toolkit screenshots as visua
 | Export engine behavior | Implemented in `www/js/processing/export-engine.js` | Uses original decoded source and edit state, never viewport canvas; crop coordinates in source space; quarter-turn bounds; blob download and temporary URL cleanup. Large-image memory pressure remains a manual/real-device follow-up. |
 | Color/tone adjustment starter (roadmap step 1) | Implemented and accepted by user (2026-11-17) | Brightness, contrast, saturation range -100..100 with 0 neutral. Live Canvas 2D preview, grouped reset, adjustment-aware undo/redo and matching full-resolution export filters. |
 | Deterministic filters and resize (roadmap step 2) | Implemented and accepted (2026-11-17) | Original, Grayscale, Sepia, Vintage, Warm and Cool; custom output width/height, aspect lock, export dimension readout, 20,000-pixel-side and 80 MP caps. History and full-resolution export integration. Earlier command-line checks passed; tests and runtime validation were not run. |
-| Before/After comparison (roadmap step 3) | Implemented; awaiting user review | Workspace toggle shows untouched decoded source with all edit metadata bypassed; restores prior edited zoom/pan; controls are disabled while comparing. Not part of edit history or export. Tests and runtime checks were not run. |
+| Before/After comparison (roadmap step 3) | Implemented and accepted (2026-11-17) | Workspace toggle shows untouched decoded source with all edit metadata bypassed; restores prior edited zoom/pan; controls are disabled while comparing. Not part of edit history or export. |
+| ID Photo Studio and print sheets (roadmap step 4) | Implemented; awaiting user review | Separate local source; custom physical photo dimensions; approximate framing guides; A4/Letter/custom paper, orientation, margins/gap, copy layout, 300 DPI system print. No country-specific ID rules or identity-changing operations. No checks/runtime were run. ISO sheet-size source and verification date in `docs/ID-PHOTO.md`. |
 
 The user has accepted Tasks 5–7; do not ask them to repeat that confirmation. For future tasks, distinguish implementation, automated checks, user manual verification and release status.
 
@@ -72,7 +73,7 @@ The user has accepted Tasks 5–7; do not ask them to repeat that confirmation. 
 - `www/js/core/` — `state.js`, `image-document.js`, `edit-history.js`, `event-bus.js`, `job-queue.js`, `settings.js`.
 - `www/js/editor/` — `image-loader.js`, `viewport.js`, `transform-tool.js`, `crop-tool.js`, plus comparison/canvas boundaries.
 - `www/js/processing/` — `adjustments.js` provides brightness/contrast/saturation metadata; `filters.js` provides deterministic preset filters; `resize.js` validates output dimensions; `export-engine.js` applies adjustments/filters and resizes the detached full-resolution canvas.
-- `www/js/features/` — enhancement, ID photo, print layout, and upscaling slots are planned/stubs.
+- `www/js/features/` — `id-photo-studio.js` implements custom-size photo framing and print sheets; enhancement and upscaling remain planned/stubs.
 - `www/js/ai/` and `www/js/workers/` — future boundaries; no model runtime/inference is implemented.
 - `www/js/feature-screens.js`, `www/js/ui/components.js`, `www/styles.css` — feature layouts, reusable DOM controls/dialogs, and styles.
 - `scripts/` — project check and Node built-in suites for image loader, viewport, transforms, crop, history and export.
@@ -86,14 +87,15 @@ The formal `NPS-TS-001 v1.0 Technical Specification` is referenced in prior proj
 
 The repo’s documents use two naming systems: the recent conversation calls the core editor work “Phase 2 Tasks 1–7”; `docs/INITIALIZATION-PLAN.md` calls the later product areas Phases 2–6. Preserve both labels when useful and do not renumber without user direction.
 
-### Immediate: review classical editing step 3
+### Immediate: review ID Photo Studio and print sheets (step 4)
 
 1. Phase 2 core editor Tasks 1–7 are accepted by the user (2026-11-17).
 2. The user accepted the brightness/contrast/saturation starter (step 1) on 2026-11-17.
 3. Step 2 is accepted by the user. It adds deterministic presets and custom export dimensions with aspect lock, dimension readout, and 20,000-pixel-side / 80 MP bounds; filter and resize metadata participate in history and full-resolution export.
-4. Step 3 is implemented and awaits user review: the Before toggle displays the untouched original decoded image, bypassing edits, and Show edited restores prior edited zoom/pan. Comparison is temporary view state, not history or export state. Tests and runtime validation were not run.
-5. After step 3 review, separately design project/session workflow and storage policy.
-5. Keep the carried Phase 1 runtime/release checks (responsive layouts, browser dialog/focus, service worker/offline behavior, packaged Electron) visible as a separate quality/release follow-up; they do not block planning the next feature unless a new task specifies otherwise.
+4. Step 3 Before/After comparison has been accepted by the user.
+5. Step 4 is implemented and awaits user review: custom dimensions, approximate positioning guides, and A4/Letter/custom paper layouts with a 300 DPI print action. Country-specific ID rules are not included. See `docs/ID-PHOTO.md` for exact scope, standards source, and verification date. Automated checks and runtime review were not run.
+6. After step 4 review, separately design project/session workflow and storage policy.
+7. Keep the carried Phase 1 runtime/release checks (responsive layouts, browser dialog/focus, service worker/offline behavior, packaged Electron) visible as a separate quality/release follow-up; they do not block planning the next feature unless a new task specifies otherwise.
 
 ### Classical editing continuation (initialization-plan Phase 2)
 
@@ -105,13 +107,14 @@ The repo’s documents use two naming systems: the recent conversation calls the
 
 ### Comparison and project workflow
 
-- Before/after comparison uses the `www/js/editor/comparison.js` boundary and `www/js/editor/viewport.js`; current comparison is a temporary original/edited toggle, with no split slider yet.
+- Before/after comparison uses the `www/js/editor/comparison.js` boundary and `www/js/editor/viewport.js`; current comparison is a temporary original/edited toggle, with no split slider yet. The user accepted step 3.
+- ID photo and print layout are implemented in `www/js/features/id-photo-studio.js`; the feature screen and event wiring live in `www/js/feature-screens.js` and `www/js/app.js`. Paper sheet source/date and the no-compliance boundary are in `docs/ID-PHOTO.md`. User review is pending.
 - Project saving/recent projects are explicitly absent. If later approved, design local storage location, data format, quota, retention, deletion, recovery and consent first; do not silently persist image bytes.
 - Batch processing is represented in the UI but not implemented. Define file limits, per-item errors, cancellation, memory use and explicit output destination before work.
 
 ### ID Photo Studio and print layout (initialization-plan Phase 3)
 
-- Implement physical photo sizes, positioning/guides, background controls where appropriate, print sheet layouts and output dimensions.
+- User-defined physical photo sizes, approximate positioning guides, and print sheet layouts are implemented. Any future background controls need a separate explicit scope; no background replacement is included.
 - Any jurisdiction/country preset must cite the authoritative government/issuing authority, jurisdiction, exact rule, source URL and last-verified date. Recheck changing rules. Do not claim “official” or “compliant” without current evidence.
 - Do not generatively alter identity or use identity-changing restoration for official ID output. Keep print/layout/export outputs explicit and non-destructive.
 
@@ -131,7 +134,7 @@ The repo’s documents use two naming systems: the recent conversation calls the
 
 ### Other planned UI areas
 
-Enhance/Restore, Model Manager, Batch Processing, ID Photo Studio, Print Layout, Upscaling, Settings beyond theme, and Before/After are visible or architectural product slots. They are not functional merely because placeholder screens or module stubs exist. Scope and acceptance criteria per feature before coding.
+Enhance/Restore, Model Manager, Batch Processing, Upscaling, Settings beyond theme, and any split-slider Before/After comparison remain planned product areas. They are not functional merely because placeholder screens or module stubs exist. Scope and acceptance criteria per feature before coding.
 
 ## 6. Risks and technical follow-ups
 
@@ -170,4 +173,4 @@ Current Task 7 automated evidence is recorded above and in `HANDOVER.md`; it was
 
 ## 9. Suggested prompt for a new chat
 
-> Read `docs/Nuro_Photo_Studio_Project_Memory_Handover.md`, root `HANDOVER.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/BRANDING.md`, and source relevant to my task. Work only in `NuroTraders/nuro-photo-studio`. The pushed base is branch `main`, `HEAD`/`origin/main` `c6d317c`, version `0.2.0`; check Git status because steps 2 and 3 implementation/docs are uncommitted. Preserve the ZIP and `public/` folder at `C:\Users\User\Desktop\Nuro Photo Studio Local Files\`. Branding and core Tasks 1–7 are accepted. Step 1 adjustments and step 2 deterministic filters/export resize were accepted by the user. Step 3 Before/After is implemented and awaits review: original-source toggle with viewport framing restoration, editing controls disabled while active, no history/export impact. Tests and runtime checks were not run for step 3. After approval, design project/session workflow and local-storage policy. Carried Phase 1 runtime/release checks remain open. Preserve source photos; do not add cloud processing or commit/push unless explicitly asked. Include explicit commit and push commands in implementation reports, but do not execute without authorization.
+> Read `docs/Nuro_Photo_Studio_Project_Memory_Handover.md`, root `HANDOVER.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/BRANDING.md`, `docs/ID-PHOTO.md`, and source relevant to my task. Work only in `NuroTraders/nuro-photo-studio`. The pushed base is branch `main`, `HEAD`/`origin/main` `514a168958cf39ab8343c845505c31793ab3b943`, version `0.2.0`; check Git status because step 4 ID Photo Studio/print-sheet changes are uncommitted. Preserve the ZIP and `public/` folder at `C:\Users\User\Desktop\Nuro Photo Studio Local Files\`. Branding and core Tasks 1–7 are accepted. Steps 1–3 (adjustments, filters/resize, Before/After) were accepted by the user. Step 4 is implemented and awaits review: separate local source, custom physical dimensions, approximate framing guides, A4/Letter/custom paper/orientation, centered copies, and a 300 DPI print action. No jurisdiction-specific ID requirements or identity-changing edits are included; source details are in `docs/ID-PHOTO.md`. Tests/runtime UI were not run for step 4. After approval, design project/session workflow and local-storage policy. Carried Phase 1 runtime/release checks remain open. Preserve source photos; do not add cloud processing or commit/push unless explicitly asked. Include explicit commit and push commands in implementation reports, but do not execute without authorization.

@@ -14,6 +14,9 @@ import {
   clampExportQuality, downloadEditedImage, generateExportFilename, getExportFormat, getExportGeometry,
 } from './processing/export-engine.js';
 import { createCanvasViewport } from './editor/viewport.js';
+import {
+  DEFAULT_ID_PHOTO_SETTINGS, normalizeIdPhotoSettings, updateIdPhotoStudio, printIdPhotoSheet,
+} from './features/id-photo-studio.js';
 import { invertCropAspectRatio, swapCropAspectPreset } from './editor/crop-tool.js';
 import {
   DEFAULT_TRANSFORM, rotateClockwise, rotateCounterClockwise,
@@ -36,6 +39,9 @@ let activeTransform = { ...DEFAULT_TRANSFORM };
 let activeAdjustments = { ...DEFAULT_ADJUSTMENTS };
 let activeFilter = 'original';
 let comparisonMode = false;
+let activeIdPhoto = null;
+let idPhotoImportSequence = 0;
+let idPhotoSettings = { ...DEFAULT_ID_PHOTO_SETTINGS };
 let activeResize = null;
 let activeCrop = null;
 let cropMode = false;
@@ -101,6 +107,7 @@ function navigateTo(screenId) {
   activeScreen = item.id;
   if (item.id === 'home') renderDashboard(dashboard);
   else if (item.id === 'editor') renderEditorScreen();
+  else if (item.id === 'id-photo') renderIdPhotoScreen();
   else renderFeatureScreen(dashboard, item.id);
   closeMobileNavigation();
 }
@@ -115,6 +122,11 @@ dashboard.addEventListener('click', (event) => {
   if (event.target.closest('[data-close-image]')) closeCurrentImage();
   if (event.target.closest('[data-export-open]') && !comparisonMode) openExportDialog();
   if (event.target.closest('[data-comparison-toggle]')) toggleComparisonMode();
+  if (event.target.closest('[data-id-photo-close]')) closeIdPhoto();
+  if (event.target.closest('[data-id-photo-use-editor]')) {
+    useEditorPhotoForIdPhoto();
+  }
+  if (event.target.closest('[data-id-photo-print]')) printIdPhoto();
   const viewportAction = event.target.closest('[data-viewport-action]')?.dataset.viewportAction;
   if (viewportAction) runViewportAction(viewportAction);
   const transformAction = event.target.closest('[data-transform-action]')?.dataset.transformAction;
@@ -128,7 +140,9 @@ dashboard.addEventListener('click', (event) => {
   if (event.target.closest('[data-resize-action="reset"]')) runResizeAction('reset');
 });
 dashboard.addEventListener('input', (event) => {
-  if (event.target.matches('[data-viewport-zoom]')) {
+  if (event.target.matches('[data-id-photo-setting]')) {
+    updateIdPhotoSetting(event.target);
+  } else if (event.target.matches('[data-viewport-zoom]')) {
     editorViewport?.setZoom(Number(event.target.value) / 100);
   } else if (event.target.matches('[data-crop-width], [data-crop-height]')) {
     const value = Number(event.target.value);
@@ -151,6 +165,16 @@ dashboard.addEventListener('input', (event) => {
 });
 
 dashboard.addEventListener('change', (event) => {
+  if (event.target.matches('[data-id-photo-file-input]')) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (file) importIdPhoto(file);
+    return;
+  }
+  if (event.target.matches('[data-id-photo-setting]')) {
+    updateIdPhotoSetting(event.target);
+    return;
+  }
   if (event.target.matches('[data-crop-ratio]')) {
     activeCropRatio = event.target.value;
     originalCropRatioInverted = false;
@@ -261,6 +285,74 @@ async function importImage(file) {
       ? error.message
       : 'The image could not be opened. Try choosing a different file.';
     setImportStatus(message, true);
+  }
+}
+
+function renderIdPhotoScreen() {
+  renderFeatureScreen(dashboard, 'id-photo', {
+    idPhotoImage: activeIdPhoto?.image ?? null,
+    idPhotoSettings,
+    canUseEditorImage: Boolean(activeImage?.document?.original?.file),
+  });
+  updateIdPhotoStudio(dashboard, activeIdPhoto?.image ?? null, idPhotoSettings);
+}
+
+async function importIdPhoto(file) {
+  const sequence = ++idPhotoImportSequence;
+  const status = dashboard.querySelector('[data-id-photo-status]');
+  if (status) status.textContent = `Opening ${file.name}…`;
+  try {
+    const loaded = await loadImageFile(file);
+    if (sequence !== idPhotoImportSequence) {
+      releaseLoadedImage(loaded);
+      return;
+    }
+    loaded.image.alt = loaded.document.name;
+    const previous = activeIdPhoto;
+    activeIdPhoto = loaded;
+    releaseLoadedImage(previous);
+    if (activeScreen === 'id-photo') updateIdPhotoStudio(dashboard, loaded.image, idPhotoSettings);
+  } catch (error) {
+    if (sequence !== idPhotoImportSequence) return;
+    if (status) {
+      status.textContent = error instanceof ImageImportError ? error.message : 'This photo could not be opened.';
+      status.setAttribute('role', 'alert');
+    }
+  }
+}
+
+function closeIdPhoto() {
+  idPhotoImportSequence += 1;
+  releaseLoadedImage(activeIdPhoto);
+  activeIdPhoto = null;
+  if (activeScreen === 'id-photo') updateIdPhotoStudio(dashboard, null, idPhotoSettings);
+}
+
+function useEditorPhotoForIdPhoto() {
+  if (!activeImage?.image) return;
+  idPhotoImportSequence += 1;
+  releaseLoadedImage(activeIdPhoto);
+  activeIdPhoto = { image: activeImage.image, document: activeImage.document, objectUrl: null };
+  activeIdPhoto.image.alt = activeIdPhoto.document.name;
+  if (activeScreen === 'id-photo') updateIdPhotoStudio(dashboard, activeIdPhoto.image, idPhotoSettings);
+}
+
+function updateIdPhotoSetting(input) {
+  const key = input.dataset.idPhotoSetting;
+  if (!key) return;
+  const value = key === 'paper' ? input.value : Number(input.value);
+  idPhotoSettings = normalizeIdPhotoSettings({ ...idPhotoSettings, [key]: value });
+  if (activeScreen === 'id-photo') updateIdPhotoStudio(dashboard, activeIdPhoto?.image ?? null, idPhotoSettings);
+}
+
+function printIdPhoto() {
+  if (!activeIdPhoto?.image || activeScreen !== 'id-photo') return;
+  const status = dashboard.querySelector('[data-id-photo-layout-status]');
+  try {
+    const layout = printIdPhotoSheet(activeIdPhoto.image, idPhotoSettings);
+    if (status) status.textContent = `Print dialog opened for ${layout.pageWidthMm} × ${layout.pageHeightMm} mm at ${300} DPI. Check the paper and scale settings before printing.`;
+  } catch (error) {
+    if (status) status.textContent = error instanceof Error ? error.message : 'The print sheet could not be prepared.';
   }
 }
 
@@ -694,9 +786,12 @@ function updateZoomControls({ percent }) {
 window.addEventListener('pagehide', (event) => {
   if (event.persisted) return;
   importSequence += 1;
+  idPhotoImportSequence += 1;
   destroyEditorViewport();
   releaseLoadedImage(activeImage);
+  releaseLoadedImage(activeIdPhoto);
   activeImage = null;
+  activeIdPhoto = null;
   activeTransform = { ...DEFAULT_TRANSFORM };
   activeAdjustments = { ...DEFAULT_ADJUSTMENTS };
   activeFilter = 'original';

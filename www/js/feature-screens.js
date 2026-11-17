@@ -3,11 +3,12 @@ import { ADJUSTMENT_RANGES, DEFAULT_ADJUSTMENTS, hasAdjustmentChanges } from './
 import { FILTER_PRESETS, normalizeFilter } from './processing/filters.js';
 import { MAX_OUTPUT_SIDE, getResizeOutputDimensions } from './processing/resize.js';
 import { COMPARISON_LABELS } from './editor/comparison.js';
+import { createIdPhotoStudio } from './features/id-photo-studio.js';
 
 const screenCopy = {
   editor: { eyebrow: 'PHOTO WORKSPACE', title: 'Photo Editor', intro: 'Open a local image to rotate, crop, adjust color, apply a filter, resize the export, undo edits, and save a new copy. The original file remains unchanged.' },
   enhance: { eyebrow: 'ENHANCE & RESTORE', title: 'Bring out more detail', intro: 'Enhancement and restoration tools are planned. No image processing runs on this screen.' },
-  'id-photo': { eyebrow: 'ID PHOTO STUDIO', title: 'Prepare an ID photo', intro: 'Photo sizes, background controls, positioning guides, and print layouts are planned for a later phase.' },
+  'id-photo': { eyebrow: 'ID PHOTO STUDIO', title: 'Prepare a print-ready photo', intro: 'Set a custom physical photo size, align the framing with visual guides, and arrange copies on a printable sheet. Check the required size with the receiving authority.' },
   batch: { eyebrow: 'BATCH PROCESSING', title: 'Work through a set of photos', intro: 'Batch workflows are planned. There is no queue or image processing yet.' },
   models: { eyebrow: 'MODEL MANAGER', title: 'Optional on-device models', intro: 'No AI models are bundled or installed. Model management will be designed separately with clear source and license details.' },
   settings: { eyebrow: 'PREFERENCES', title: 'Settings', intro: 'Appearance is available from the theme control in the top bar. Additional app preferences are planned.' },
@@ -32,6 +33,18 @@ export function renderFeatureScreen(container, screenId, options = {}) {
   lede.textContent = content.intro;
   intro.append(eyebrow, heading, lede);
   container.append(intro);
+
+  if (screenId === 'id-photo') {
+    container.append(createIdPhotoStudio({
+      image: options.idPhotoImage,
+      settings: options.idPhotoSettings,
+      canUseEditorImage: options.canUseEditorImage,
+    }));
+    const footer = createButton({ label: 'Back to Home', variant: 'secondary', className: 'feature-screen-home' });
+    footer.dataset.navigate = 'home';
+    container.append(footer);
+    return true;
+  }
 
   const layout = screenLayouts[screenId];
   const grid = document.createElement('div');
@@ -340,21 +353,6 @@ function statusTile(label, value, detail) {
   return tile;
 }
 
-function visualControl(label, value) {
-  const control = document.createElement('div');
-  control.className = 'visual-control-placeholder';
-  const labelNode = document.createElement('span');
-  labelNode.className = 'field-label';
-  labelNode.textContent = label;
-  const valueNode = document.createElement('div');
-  valueNode.className = 'visual-control-value';
-  valueNode.textContent = value;
-  const note = document.createElement('small');
-  note.textContent = 'Control coming soon';
-  control.append(labelNode, valueNode, note);
-  return control;
-}
-
 const screenLayouts = {
   editor: {
     className: 'editor-screen-grid',
@@ -367,24 +365,6 @@ const screenLayouts = {
     panels: [
       { title: 'Enhance', eyebrow: 'DETAIL & TONE', badge: 'UPCOMING', content: () => placeholder({ icon: '✧', title: 'Enhancement tools are planned', description: 'No enhancement, sharpening, or image processing is available yet.' }) },
       { title: 'Restore', eyebrow: 'PHOTO RESTORATION', badge: 'UPCOMING', content: () => placeholder({ icon: '✦', title: 'Restoration tools are planned', description: 'Repair and restoration workflows are not available yet.' }) },
-    ],
-  },
-  'id-photo': {
-    className: 'id-screen-grid',
-    panels: [
-      { title: 'Photo size', eyebrow: 'DOCUMENT SIZE', badge: 'PLANNED', content: () => visualControl('Preset', 'Choose a country and photo size') },
-      { title: 'Background & positioning', eyebrow: 'PHOTO SETUP', badge: 'PLANNED', content: () => {
-        const controls = document.createElement('div');
-        controls.className = 'visual-control-grid';
-        controls.append(visualControl('Background', 'Select a background'), visualControl('Position', 'Align subject in frame'));
-        return controls;
-      } },
-      { title: 'Print layout preview', eyebrow: 'PRINT SHEET', badge: 'PLANNED', className: 'print-preview-panel', content: () => {
-        const preview = document.createElement('div');
-        preview.className = 'print-preview-placeholder';
-        preview.append(placeholder({ icon: '▤', title: 'Print preview will appear here', description: 'Photo guides and print sheets are not implemented.' }));
-        return preview;
-      } },
     ],
   },
   batch: {
