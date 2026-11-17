@@ -57,6 +57,10 @@ function freezeSnapshot(state) {
     contrast: clampAdjustment(state.adjustments.contrast),
     saturation: clampAdjustment(state.adjustments.saturation),
   });
+  const resize = state.resize == null ? null : Object.freeze({
+    width: Number(state.resize.width),
+    height: Number(state.resize.height),
+  });
   return Object.freeze({
     rotation: state.rotation,
     flipHorizontal: Boolean(state.flipHorizontal),
@@ -64,6 +68,8 @@ function freezeSnapshot(state) {
     crop,
     aspectRatio: typeof state.aspectRatio === 'string' ? state.aspectRatio : null,
     ...(adjustments ? { adjustments } : {}),
+    ...(typeof state.filter === 'string' ? { filter: state.filter } : {}),
+    ...(resize ? { resize } : {}),
   });
 }
 
@@ -73,6 +79,7 @@ function cloneSnapshot(state) {
     ...state,
     crop: state.crop ? { ...state.crop } : null,
     ...(state.adjustments ? { adjustments: { ...state.adjustments } } : {}),
+    ...(state.resize ? { resize: { ...state.resize } } : {}),
   };
 }
 

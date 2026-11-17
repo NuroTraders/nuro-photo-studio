@@ -4,7 +4,7 @@
 
 **Live preview:** [Nuro Photo Studio on GitHub Pages](https://nurotraders.github.io/nuro-photo-studio/)
 
-Independent local-first photo editor for browser/PWA and Windows Electron. Core editing includes local image import, Canvas 2D viewing, rotate/flip, crop, session undo/redo, non-destructive brightness/contrast/saturation adjustments, and full-resolution export. AI inference, model downloads, accounts, cloud services, and project saving are not included.
+Independent local-first photo editor for browser/PWA and Windows Electron. Core editing includes local image import, Canvas 2D viewing, rotate/flip, crop, session undo/redo, non-destructive brightness/contrast/saturation adjustments, deterministic filters, export resizing, and full-resolution export. AI inference, model downloads, accounts, cloud services, and project saving are not included.
 
 ## Requirements
 
@@ -18,7 +18,7 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. The app includes a responsive dashboard, theme switch, navigation, and shared UI components. In Photo Editor, open a local JPG/JPEG, PNG or WebP image, or drop one into the workspace. The canvas supports fit-to-screen, actual size, zoom controls, wheel zoom, drag panning, 90-degree rotation, horizontal/vertical flips, and non-destructive crop with drag-to-draw, aspect presets, and pixel dimension controls. Brightness, contrast, and saturation use live preview sliders and can be reset together. Undo and redo history covers rotation, flips, applied crops, crop reset, and committed adjustment changes; it is session-only and clears when an image is replaced or closed. Export creates a full-resolution PNG, JPEG, or WebP download from the original decoded image and edit metadata; JPEG/WebP quality can be adjusted. Imports are limited to 100 MB, 80 megapixels and 20,000 pixels per side. The image remains on-device and its original file is held unchanged; project saving is not yet available.
+Open the local URL printed by Vite. The app includes a responsive dashboard, theme switch, navigation, and shared UI components. In Photo Editor, open a local JPG/JPEG, PNG or WebP image, or drop one into the workspace. The canvas supports fit-to-screen, actual size, zoom controls, wheel zoom, drag panning, 90-degree rotation, horizontal/vertical flips, and non-destructive crop with drag-to-draw, aspect presets, and pixel dimension controls. Brightness, contrast, and saturation use live preview sliders; deterministic Original, Grayscale, Sepia, Vintage, Warm, and Cool filters are available. Resize controls set output width and height, lock aspect ratio by default, and leave the viewport preview independent of output resolution. Undo and redo history covers rotation, flips, crop, adjustments, filters, and resize; it is session-only and clears when an image is replaced or closed. Export creates a full-resolution PNG, JPEG, or WebP download from the original decoded image and edit metadata; JPEG/WebP quality can be adjusted. Output is limited to 80 megapixels and 20,000 pixels per side. Imports are limited to 100 MB, 80 megapixels and 20,000 pixels per side. The image remains on-device and its original file is held unchanged; project saving is not yet available.
 
 ## PWA preview
 

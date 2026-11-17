@@ -1,5 +1,7 @@
 import { normalizeTransform } from '../editor/transform-tool.js';
-import { getAdjustmentFilter, normalizeAdjustments } from './adjustments.js';
+import { normalizeAdjustments } from './adjustments.js';
+import { getCanvasFilter } from './filters.js';
+import { getResizeOutputDimensions } from './resize.js';
 
 export const EXPORT_FORMATS = Object.freeze({
   png: Object.freeze({ mimeType: 'image/png', extension: 'png', defaultQuality: null }),
@@ -8,7 +10,7 @@ export const EXPORT_FORMATS = Object.freeze({
 });
 
 /** Return pixel-aligned crop bounds and the full-resolution output dimensions. */
-export function getExportGeometry(sourceWidth, sourceHeight, transform = {}, crop = null) {
+export function getExportGeometry(sourceWidth, sourceHeight, transform = {}, crop = null, resize = null) {
   const width = positivePixelDimension(sourceWidth, 'sourceWidth');
   const height = positivePixelDimension(sourceHeight, 'sourceHeight');
   const normalizedTransform = normalizeTransform(transform);
@@ -29,6 +31,9 @@ export function getExportGeometry(sourceWidth, sourceHeight, transform = {}, cro
   const bottom = clamp(Math.round(clippedBottom), top + 1, height);
   const cropRect = { x: left, y: top, width: right - left, height: bottom - top };
   const swapsAxes = normalizedTransform.rotation === 90 || normalizedTransform.rotation === 270;
+  const baseWidth = swapsAxes ? cropRect.height : cropRect.width;
+  const baseHeight = swapsAxes ? cropRect.width : cropRect.height;
+  const outputDimensions = getResizeOutputDimensions(baseWidth, baseHeight, resize);
   return {
     sourceWidth: width,
     sourceHeight: height,
@@ -36,8 +41,8 @@ export function getExportGeometry(sourceWidth, sourceHeight, transform = {}, cro
     rotation: normalizedTransform.rotation,
     flipHorizontal: normalizedTransform.flipHorizontal,
     flipVertical: normalizedTransform.flipVertical,
-    width: swapsAxes ? cropRect.height : cropRect.width,
-    height: swapsAxes ? cropRect.width : cropRect.height,
+    width: outputDimensions.width,
+    height: outputDimensions.height,
   };
 }
 
@@ -73,11 +78,14 @@ export function normalizeExportFilename(filename, format) {
 }
 
 /** Render at source-pixel resolution to a detached canvas, independent of the viewport canvas. */
-export function renderExportCanvas(image, { transform = {}, crop = null, adjustments = {}, canvasFactory = () => document.createElement('canvas') } = {}) {
+export function renderExportCanvas(image, { transform = {}, crop = null, adjustments = {}, filter = 'original', resize = null, canvasFactory = () => document.createElement('canvas') } = {}) {
   if (!image || !Number.isFinite(image.naturalWidth) || !Number.isFinite(image.naturalHeight)) {
     throw new TypeError('A decoded source image is required for export.');
   }
-  const geometry = getExportGeometry(image.naturalWidth, image.naturalHeight, transform, crop);
+  const baseGeometry = getExportGeometry(image.naturalWidth, image.naturalHeight, transform, crop);
+  const geometry = resize
+    ? getExportGeometry(image.naturalWidth, image.naturalHeight, transform, crop, resize)
+    : baseGeometry;
   const canvas = canvasFactory();
   canvas.width = geometry.width;
   canvas.height = geometry.height;
@@ -86,8 +94,11 @@ export function renderExportCanvas(image, { transform = {}, crop = null, adjustm
 
   context.imageSmoothingEnabled = true;
   context.imageSmoothingQuality = 'high';
-  context.filter = getAdjustmentFilter(normalizeAdjustments(adjustments));
+  context.filter = getCanvasFilter(normalizeAdjustments(adjustments), filter);
   context.translate(geometry.width / 2, geometry.height / 2);
+  const scaleX = geometry.width / baseGeometry.width;
+  const scaleY = geometry.height / baseGeometry.height;
+  if (scaleX !== 1 || scaleY !== 1) context.scale(scaleX, scaleY);
   context.rotate(geometry.rotation * Math.PI / 180);
   context.scale(geometry.flipHorizontal ? -1 : 1, geometry.flipVertical ? -1 : 1);
   context.translate(
@@ -124,8 +135,8 @@ export function canvasToBlob(canvas, format, quality) {
   });
 }
 
-export async function downloadEditedImage({ image, transform, crop, adjustments, format, quality, filename, canvasFactory, documentRef = document, urlApi = URL }) {
-  const { canvas, geometry } = renderExportCanvas(image, { transform, crop, adjustments, canvasFactory });
+export async function downloadEditedImage({ image, transform, crop, adjustments, filter, resize, format, quality, filename, canvasFactory, documentRef = document, urlApi = URL }) {
+  const { canvas, geometry } = renderExportCanvas(image, { transform, crop, adjustments, filter, resize, canvasFactory });
   try {
     const blob = await canvasToBlob(canvas, format, quality);
     const outputName = normalizeExportFilename(filename || generateExportFilename(image.name, format), format);

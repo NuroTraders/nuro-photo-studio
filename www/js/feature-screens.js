@@ -1,8 +1,10 @@
 import { createBadge, createButton, createCard, createEmptyState } from './ui/components.js';
 import { ADJUSTMENT_RANGES, DEFAULT_ADJUSTMENTS, hasAdjustmentChanges } from './processing/adjustments.js';
+import { FILTER_PRESETS, normalizeFilter } from './processing/filters.js';
+import { MAX_OUTPUT_SIDE, getResizeOutputDimensions } from './processing/resize.js';
 
 const screenCopy = {
-  editor: { eyebrow: 'PHOTO WORKSPACE', title: 'Photo Editor', intro: 'Open a local image to view, rotate, flip, crop, undo edits, and export a new full-resolution copy. The original file remains unchanged.' },
+  editor: { eyebrow: 'PHOTO WORKSPACE', title: 'Photo Editor', intro: 'Open a local image to rotate, crop, adjust color, apply a filter, resize the export, undo edits, and save a new copy. The original file remains unchanged.' },
   enhance: { eyebrow: 'ENHANCE & RESTORE', title: 'Bring out more detail', intro: 'Enhancement and restoration tools are planned. No image processing runs on this screen.' },
   'id-photo': { eyebrow: 'ID PHOTO STUDIO', title: 'Prepare an ID photo', intro: 'Photo sizes, background controls, positioning guides, and print layouts are planned for a later phase.' },
   batch: { eyebrow: 'BATCH PROCESSING', title: 'Work through a set of photos', intro: 'Batch workflows are planned. There is no queue or image processing yet.' },
@@ -78,7 +80,7 @@ export function updateEditorImageUI(container, image) {
     status.setAttribute('role', 'status');
   }
 
-  workspace.querySelectorAll('[data-viewport-action], [data-transform-action], [data-viewport-zoom], [data-crop-action], [data-crop-ratio], [data-crop-width], [data-crop-height], [data-crop-orientation], [data-adjustment], [data-adjustment-action], [data-export-open]').forEach((control) => {
+  workspace.querySelectorAll('[data-viewport-action], [data-transform-action], [data-viewport-zoom], [data-crop-action], [data-crop-ratio], [data-crop-width], [data-crop-height], [data-crop-orientation], [data-adjustment], [data-adjustment-action], [data-image-filter], [data-resize-width], [data-resize-height], [data-resize-lock], [data-resize-action], [data-export-open]').forEach((control) => {
     control.disabled = !image;
   });
 
@@ -108,6 +110,34 @@ export function updateEditorAdjustmentsUI(container, adjustments = DEFAULT_ADJUS
   }
   const reset = container.querySelector('[data-adjustment-action="reset"]');
   if (reset) reset.disabled = !hasImage || disabled || !hasAdjustmentChanges(normalized);
+}
+
+export function updateEditorFilterUI(container, filter = 'original', { hasImage = false, disabled = false } = {}) {
+  const select = container.querySelector('[data-image-filter]');
+  if (!select) return;
+  select.value = normalizeFilter(filter);
+  select.disabled = !hasImage || disabled;
+}
+
+export function updateEditorResizeUI(container, { hasImage = false, disabled = false, baseWidth = 0, baseHeight = 0, resize = null, force = false } = {}) {
+  const widthInput = container.querySelector('[data-resize-width]');
+  const heightInput = container.querySelector('[data-resize-height]');
+  const lock = container.querySelector('[data-resize-lock]');
+  const reset = container.querySelector('[data-resize-action="reset"]');
+  const output = container.querySelector('[data-resize-output]');
+  let dimensions = null;
+  if (hasImage) dimensions = getResizeOutputDimensions(baseWidth, baseHeight, resize);
+  if (widthInput) {
+    widthInput.disabled = !hasImage || disabled;
+    if (dimensions && (force || document.activeElement !== widthInput)) widthInput.value = String(dimensions.width);
+  }
+  if (heightInput) {
+    heightInput.disabled = !hasImage || disabled;
+    if (dimensions && (force || document.activeElement !== heightInput)) heightInput.value = String(dimensions.height);
+  }
+  if (lock) lock.disabled = !hasImage || disabled;
+  if (reset) reset.disabled = !hasImage || disabled || !resize;
+  if (output) output.textContent = dimensions ? `${dimensions.width.toLocaleString()} × ${dimensions.height.toLocaleString()} px` : '—';
 }
 
 export function updateEditorTransformUI(container, transform = {}) {
@@ -499,6 +529,86 @@ function createViewportControls(hasImage = false) {
   adjustmentPanel.append(adjustmentHeader, adjustmentNote, adjustmentGrid);
   controls.append(adjustmentPanel);
 
+  const filterPanel = document.createElement('section');
+  filterPanel.className = 'filter-panel';
+  const filterLabel = document.createElement('label');
+  filterLabel.className = 'filter-select-field';
+  const filterTitle = document.createElement('span');
+  filterTitle.textContent = 'Filter';
+  const filterSelect = document.createElement('select');
+  filterSelect.className = 'filter-select';
+  filterSelect.dataset.imageFilter = 'true';
+  filterSelect.setAttribute('aria-label', 'Image filter');
+  filterSelect.disabled = !hasImage;
+  for (const [value, preset] of Object.entries(FILTER_PRESETS)) {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = preset.label;
+    filterSelect.append(option);
+  }
+  filterLabel.append(filterTitle, filterSelect);
+  filterPanel.append(filterLabel);
+  controls.append(filterPanel);
+
+  const resizePanel = document.createElement('section');
+  resizePanel.className = 'resize-panel';
+  resizePanel.setAttribute('aria-labelledby', 'editor-resize-title');
+  resizePanel.setAttribute('aria-describedby', 'editor-resize-note');
+  const resizeHeader = document.createElement('div');
+  resizeHeader.className = 'adjustment-panel-header';
+  const resizeTitle = document.createElement('h4');
+  resizeTitle.id = 'editor-resize-title';
+  resizeTitle.textContent = 'Resize export';
+  const resetResize = createButton({ label: 'Reset', variant: 'secondary', className: 'adjustment-reset-button', disabled: true });
+  resetResize.dataset.resizeAction = 'reset';
+  resetResize.title = 'Use the original effective image dimensions';
+  resizeHeader.append(resizeTitle, resetResize);
+  const resizeNote = document.createElement('p');
+  resizeNote.className = 'adjustment-panel-note';
+  resizeNote.id = 'editor-resize-note';
+  resizeNote.textContent = 'The canvas preview stays fit to screen; these dimensions apply to export.';
+  const resizeFields = document.createElement('div');
+  resizeFields.className = 'resize-dimensions';
+  for (const [dimension, labelText] of [['width', 'Width'], ['height', 'Height']]) {
+    const field = document.createElement('label');
+    field.className = 'resize-field';
+    const label = document.createElement('span');
+    label.textContent = labelText;
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.min = '1';
+    input.max = String(MAX_OUTPUT_SIDE);
+    input.step = '1';
+    input.inputMode = 'numeric';
+    input.disabled = !hasImage;
+    input.dataset[dimension === 'width' ? 'resizeWidth' : 'resizeHeight'] = 'true';
+    input.setAttribute('aria-label', `Export width in pixels`);
+    if (dimension === 'height') input.setAttribute('aria-label', 'Export height in pixels');
+    field.append(label, input);
+    resizeFields.append(field);
+  }
+  const resizeLockLabel = document.createElement('label');
+  resizeLockLabel.className = 'resize-lock-label';
+  const resizeLock = document.createElement('input');
+  resizeLock.type = 'checkbox';
+  resizeLock.checked = true;
+  resizeLock.disabled = !hasImage;
+  resizeLock.dataset.resizeLock = 'true';
+  resizeLockLabel.append(resizeLock, document.createTextNode(' Lock aspect ratio'));
+  const resizeOutput = document.createElement('p');
+  resizeOutput.className = 'resize-output';
+  resizeOutput.dataset.resizeOutput = 'true';
+  resizeOutput.setAttribute('aria-live', 'polite');
+  resizeOutput.textContent = '—';
+  const resizeError = document.createElement('p');
+  resizeError.className = 'resize-error';
+  resizeError.dataset.resizeError = 'true';
+  resizeError.setAttribute('role', 'status');
+  resizeError.setAttribute('aria-live', 'polite');
+  resizeError.hidden = true;
+  resizePanel.append(resizeHeader, resizeNote, resizeFields, resizeLockLabel, resizeOutput, resizeError);
+  controls.append(resizePanel);
+
   const upcoming = document.createElement('div');
   upcoming.className = 'viewport-upcoming-tools';
   const upcomingLabel = document.createElement('p');
@@ -652,7 +762,7 @@ export function updateEditorCropUI(container, { hasImage, cropMode, hasCrop, dra
     if (cropBounds) input.max = String(Math.floor(cropBounds[dimension]));
     if (draftCrop && (forceDimensions || document.activeElement !== input)) input.value = String(Math.max(1, Math.round(draftCrop[dimension])));
   }
-  container.querySelectorAll('[data-transform-action], [data-viewport-action], [data-viewport-zoom], [data-adjustment], [data-adjustment-action]').forEach((control) => {
+  container.querySelectorAll('[data-transform-action], [data-viewport-action], [data-viewport-zoom], [data-adjustment], [data-adjustment-action], [data-image-filter], [data-resize-width], [data-resize-height], [data-resize-lock], [data-resize-action]').forEach((control) => {
     control.disabled = !hasImage || cropMode;
   });
 }

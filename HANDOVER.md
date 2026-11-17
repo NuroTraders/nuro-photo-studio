@@ -1,9 +1,9 @@
 # Nuro Photo Studio — Handover
 
-**Current milestone:** Phase 2 core editor (Tasks 1–7) accepted by the user; first classical color/tone adjustment slice is being implemented. Phase 1 runtime/release checks remain open.
+**Current milestone:** Phase 2 core editor (Tasks 1–7) accepted by the user. Color/tone adjustments (step 1) accepted by the user; deterministic filters and export resizing (step 2) implemented and awaiting review. Phase 1 runtime/release checks remain open.
 **Specification baseline:** NPS-TS-001 v1.0 (draft engineering baseline)  
 **App version:** 0.2.0 (see Version history below)
-**State:** Local image loading, Canvas 2D viewing, non-destructive quarter-turn rotation/flips, crop preview/apply/reset with drag-to-draw, session-only undo/redo, full-resolution local export, and a first brightness/contrast/saturation adjustment set are implemented. Adjustment controls preview in Canvas 2D, are stored as edit metadata, and are included in full-resolution export. Automated validation for this adjustment slice is pending. No AI behavior was added.
+**State:** Local image loading, Canvas 2D viewing, non-destructive quarter-turn rotation/flips, crop preview/apply/reset with drag-to-draw, session-only undo/redo, full-resolution local export, brightness/contrast/saturation adjustments, deterministic filter presets, and bounded export resizing are implemented. These edits remain metadata over the untouched source and participate in session history. Filters affect the Canvas preview and export; resize dimensions affect export only, without allocating a second full-resolution preview. Step 2 command-line checks pass; tests and runtime review are pending. No AI behavior was added.
 
 ## What is here
 
@@ -27,7 +27,7 @@
 - No AI runtime, model weights, inference, model download, or CDN runtime.
 - No image upload or cloud service. Imported photos remain local.
 - Project persistence and recent-project records are not implemented or fabricated. The selected appearance theme is saved locally as a UI preference.
-- Signing, updates, analytics, project persistence, ID compliance presets, AI, batch processing, additional filters and resizing are deferred.
+- Signing, updates, analytics, project persistence, ID compliance presets, AI, batch processing, advanced filters, and resize workflows beyond custom export dimensions are deferred.
 
 ## Collaboration rules
 
@@ -55,11 +55,11 @@ Completed:
 
 Phase 2 core Tasks 1–7 are implemented and accepted by the user (reported 2026-11-17). The user confirmed the Crop, Undo/Redo, and Export work has been manually checked and is okay. Task 7 coding-agent validation remained command-line-only as required; this user confirmation is separate evidence. The current version is `0.2.0`.
 
-The initial color/tone adjustment slice (brightness, contrast, saturation) is implemented. `npm run check`, `npm run build`, and `git diff --check` pass; `npm test` was not run. It is integrated with session history and full-resolution export and awaits user review. After review, continue with deterministic filters and resize. Separate carried Phase 1 runtime/release checks remain open: narrow layouts, browser console/dialog/focus, service worker/offline behavior, and packaged Electron. Task 7's coding-agent task explicitly prohibited runtime UI checks; the user later confirmed manual verification was completed and accepted.
+The user accepted the initial color/tone slice (brightness, contrast, saturation) on 2026-11-17. Step 2 is now implemented: deterministic Original/Grayscale/Sepia/Vintage/Warm/Cool filters plus custom export width/height with aspect lock, live output-dimension readout, and 20,000-pixel-side / 80 MP caps. The viewport stays fit to screen; resize applies only during full-resolution export. Step 2 is integrated with history and export. `npm run check`, `npm run build`, and `git diff --check` pass; `npm test` and runtime UI validation were not run. Await user review before proceeding. After approval, the next planned feature is Before/After comparison and a separately scoped project/session workflow. Carried Phase 1 runtime/release checks remain open: narrow layouts, browser console/dialog/focus, service worker/offline behavior, and packaged Electron. Task 7's coding-agent task explicitly prohibited runtime UI checks; the user later confirmed manual verification was completed and accepted.
 
 Future roadmap, subject to separate scope and acceptance:
 
-1. Classical adjustments, deterministic filters, and resize, integrated with history and full-resolution export.
+1. Review the implemented deterministic filters and export resizing.
 2. Before/after comparison and project/session workflows. Project persistence needs a separate local storage, quota, retention and deletion design.
 3. ID-photo dimensions, positioning guides, and print sheets; jurisdiction presets must cite current authoritative standards and review dates.
 4. Optional on-device upscaling and face detection/restoration, only after model/license/runtime/provider/memory decisions, explicit user-controlled downloads, and identity-safety boundaries.
@@ -229,7 +229,8 @@ Phase 2 core editing is implemented and accepted by the user. No Task 8 or addit
 
 ## Update log
 
-- Color and tone adjustment starter (2026-11-17): added non-destructive Brightness, Contrast, and Saturation controls with live Canvas 2D preview, -100..100 neutral-centered values, grouped Reset, adjustment metadata in bounded session history, restoration through undo/redo, and matching native Canvas filters in full-resolution export. The imported image and source bytes remain untouched. No dependency or version change. `npm run check`, `npm run build`, and `git diff --check` passed; tests and runtime UI validation remain pending.
+- Color and tone adjustment starter (2026-11-17): added non-destructive Brightness, Contrast, and Saturation controls with live Canvas 2D preview, -100..100 neutral-centered values, grouped Reset, adjustment metadata in bounded session history, restoration through undo/redo, and matching native Canvas filters in full-resolution export. The imported image and source bytes remain untouched. The user confirmed this first slice was okay. No dependency or version change.
+- Deterministic filters and export resizing (2026-11-17): added Original, Grayscale, Sepia, Vintage, Warm, and Cool presets; custom output width/height with aspect lock; output dimension readout; and 20,000-pixel-side / 80 MP bounds. The viewport stays source-fit and resize is applied only on full-resolution export. Filter and resize state are undoable. `npm run check`, `npm run build`, and `git diff --check` passed; tests and runtime UI validation were not run. Awaiting user review.
 - Branding model (2026-11-17): added the NasirPintu creator attribution entry in the sidebar and responsive top bar, plus an accessible About/Credits dialog with owner-supplied portrait, social profiles, collaboration and toolchain credits, and local-privacy statement. Branding is implemented in vanilla JS/CSS and documented in `docs/BRANDING.md`; `docs/LICENSES.md` records the supplied portrait and actual toolchain inventory. No React, Lucide, hosted fonts, telemetry, or image-processing dependency was added. `npm run check`, `npm run build`, and `git diff --check` passed. User supplied screenshots of the deployed dialog's opening and scrolled states and confirmed “implemented okay”; treat branding as visually reviewed and accepted. The coding agent did not launch a runtime UI.
 
 - Phase 0: initial project skeleton authored from the referenced v1.0 specification and proposal context.

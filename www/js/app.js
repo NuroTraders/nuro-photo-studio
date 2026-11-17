@@ -1,6 +1,6 @@
 import { registerServiceWorker } from './bootstrap.js';
 import { renderDashboard } from './dashboard.js';
-import { renderFeatureScreen, updateEditorImageUI, updateEditorCropUI, updateEditorHistoryUI, updateEditorTransformUI, updateEditorAdjustmentsUI } from './feature-screens.js';
+import { renderFeatureScreen, updateEditorImageUI, updateEditorCropUI, updateEditorHistoryUI, updateEditorTransformUI, updateEditorAdjustmentsUI, updateEditorFilterUI, updateEditorResizeUI } from './feature-screens.js';
 import { navigationItems } from './navigation.js';
 import { loadImageFile, releaseLoadedImage, ImageImportError } from './editor/image-loader.js';
 import { createAppState } from './core/state.js';
@@ -8,6 +8,8 @@ import { createEditHistory } from './core/edit-history.js';
 import { createDialog } from './ui/components.js';
 import { createAboutCreditsContent } from './branding/about-credits.js';
 import { DEFAULT_ADJUSTMENTS, hasAdjustmentChanges, normalizeAdjustments, setAdjustmentValue } from './processing/adjustments.js';
+import { normalizeFilter } from './processing/filters.js';
+import { createResizeDimensions, getResizeOutputDimensions, isResizeAtOriginalSize } from './processing/resize.js';
 import {
   clampExportQuality, downloadEditedImage, generateExportFilename, getExportFormat, getExportGeometry,
 } from './processing/export-engine.js';
@@ -32,6 +34,8 @@ let activeScreen = 'home';
 let editorViewport = null;
 let activeTransform = { ...DEFAULT_TRANSFORM };
 let activeAdjustments = { ...DEFAULT_ADJUSTMENTS };
+let activeFilter = 'original';
+let activeResize = null;
 let activeCrop = null;
 let cropMode = false;
 let activeCropRatio = 'freeform';
@@ -117,6 +121,7 @@ dashboard.addEventListener('click', (event) => {
   const historyAction = event.target.closest('[data-history-action]')?.dataset.historyAction;
   if (historyAction) runHistoryAction(historyAction);
   if (event.target.closest('[data-adjustment-action="reset"]')) runAdjustmentAction('reset');
+  if (event.target.closest('[data-resize-action="reset"]')) runResizeAction('reset');
 });
 dashboard.addEventListener('input', (event) => {
   if (event.target.matches('[data-viewport-zoom]')) {
@@ -136,6 +141,8 @@ dashboard.addEventListener('input', (event) => {
     activeAdjustments = setAdjustmentValue(activeAdjustments, event.target.dataset.adjustment, event.target.value);
     editorViewport?.setAdjustments(activeAdjustments);
     updateAdjustmentsUI();
+  } else if (event.target.matches('[data-resize-width], [data-resize-height]')) {
+    updateResizeFromInput(event.target);
   }
 });
 
@@ -154,6 +161,19 @@ dashboard.addEventListener('change', (event) => {
   if (event.target.matches('[data-adjustment]')) {
     if (activeImage && !cropMode && editHistory.push(createEditSnapshot())) updateHistoryUI();
     updateAdjustmentsUI();
+    return;
+  }
+  if (event.target.matches('[data-image-filter]')) {
+    if (!activeImage || cropMode) return;
+    activeFilter = normalizeFilter(event.target.value);
+    editorViewport?.setFilter(activeFilter);
+    if (editHistory.push(createEditSnapshot())) updateHistoryUI();
+    updateFilterUI();
+    return;
+  }
+  if (event.target.matches('[data-resize-width], [data-resize-height]')) {
+    if (activeImage && !cropMode && editHistory.push(createEditSnapshot())) updateHistoryUI();
+    updateResizeUI(true);
     return;
   }
   const input = event.target.closest('[data-image-file-input]');
@@ -206,6 +226,9 @@ async function importImage(file) {
     activeImage = loadedImage;
     activeTransform = { ...DEFAULT_TRANSFORM };
     activeAdjustments = { ...DEFAULT_ADJUSTMENTS };
+    activeFilter = 'original';
+    activeResize = null;
+    clearResizeError();
     activeCrop = null;
     cropMode = false;
     activeCropRatio = 'freeform';
@@ -217,10 +240,13 @@ async function importImage(file) {
       editorViewport.setImage(loadedImage.image);
       editorViewport.setTransform(activeTransform);
       editorViewport.setAdjustments(activeAdjustments);
+      editorViewport.setFilter(activeFilter);
       editorViewport.setCropAspectRatio(null);
       updateEditorImageUI(dashboard, loadedImage);
       updateCropUI();
       updateAdjustmentsUI();
+      updateFilterUI();
+      updateResizeUI();
       updateHistoryUI();
     } else renderEditorScreen();
     releaseLoadedImage(previousImage);
@@ -247,6 +273,9 @@ function closeCurrentImage() {
   editorViewport?.setImage(null);
   activeTransform = { ...DEFAULT_TRANSFORM };
   activeAdjustments = { ...DEFAULT_ADJUSTMENTS };
+  activeFilter = 'original';
+  activeResize = null;
+  clearResizeError();
   activeCrop = null;
   cropMode = false;
   activeCropRatio = 'freeform';
@@ -256,13 +285,13 @@ function closeCurrentImage() {
   activeImage = null;
   appState.setActiveDocument(null);
   if (!updateEditorImageUI(dashboard, null)) renderEditorScreen();
-  else { updateCropUI(); updateAdjustmentsUI(); }
+  else { updateCropUI(); updateAdjustmentsUI(); updateFilterUI(); updateResizeUI(); }
   dashboard.querySelector('[data-open-image]')?.focus();
 }
 
 function openExportDialog() {
   if (!activeImage || !editorViewport || cropMode) return;
-  const geometry = getExportGeometry(activeImage.image.naturalWidth, activeImage.image.naturalHeight, activeTransform, activeCrop);
+  const geometry = getExportGeometry(activeImage.image.naturalWidth, activeImage.image.naturalHeight, activeTransform, activeCrop, activeResize);
   const form = document.createElement('div');
   form.className = 'export-form';
 
@@ -357,6 +386,8 @@ function openExportDialog() {
               image: activeImage.image,
               transform: activeTransform,
               adjustments: activeAdjustments,
+              filter: activeFilter,
+              resize: activeResize,
               crop: activeCrop,
               format: formatSelect.value,
               quality: Number(qualityInput.value),
@@ -403,10 +434,13 @@ function renderEditorScreen() {
   editorViewport.setImage(activeImage?.image ?? null);
   editorViewport.setTransform(activeTransform);
   editorViewport.setAdjustments(activeAdjustments);
+  editorViewport.setFilter(activeFilter);
   if (activeCrop) editorViewport.setCrop(activeCrop);
   editorViewport.setCropAspectRatio(resolveCropAspectRatio());
   updateCropUI();
   updateAdjustmentsUI();
+  updateFilterUI();
+  updateResizeUI();
   updateHistoryUI();
   updateTransformUI();
 }
@@ -437,6 +471,7 @@ function runTransformAction(action) {
   editHistory.push(createEditSnapshot());
   updateHistoryUI();
   updateTransformUI();
+  updateResizeUI();
 }
 
 function runAdjustmentAction(action) {
@@ -445,6 +480,15 @@ function runAdjustmentAction(action) {
   editorViewport.setAdjustments(activeAdjustments);
   if (editHistory.push(createEditSnapshot())) updateHistoryUI();
   updateAdjustmentsUI();
+}
+
+function runResizeAction(action) {
+  if (action !== 'reset' || !activeImage || cropMode || !activeResize) return;
+  activeResize = null;
+  clearResizeError();
+  clearResizeError();
+  if (editHistory.push(createEditSnapshot())) updateHistoryUI();
+  updateResizeUI(true);
 }
 
 function runCropAction(action) {
@@ -471,6 +515,8 @@ function createEditSnapshot() {
   return {
     ...activeTransform,
     adjustments: { ...activeAdjustments },
+    filter: activeFilter,
+    resize: activeResize ? { ...activeResize } : null,
     crop: activeCrop ? { x: activeCrop.x, y: activeCrop.y, width: activeCrop.width, height: activeCrop.height } : null,
     aspectRatio: activeCropRatio === 'freeform'
       ? null
@@ -497,15 +543,20 @@ function runHistoryAction(action) {
     flipVertical: restored.flipVertical,
   };
   activeAdjustments = normalizeAdjustments(restored.adjustments ?? DEFAULT_ADJUSTMENTS);
+  activeFilter = normalizeFilter(restored.filter ?? 'original');
+  activeResize = restored.resize ? { ...restored.resize } : null;
   activeCrop = restored.crop;
   activeCropRatio = restored.aspectRatio?.startsWith('original') ? 'original' : restored.aspectRatio || 'freeform';
   originalCropRatioInverted = restored.aspectRatio === 'original:inverted';
   editorViewport?.setTransform(activeTransform);
   editorViewport?.setAdjustments(activeAdjustments);
+  editorViewport?.setFilter(activeFilter);
   editorViewport?.setCrop(activeCrop);
   editorViewport?.setCropAspectRatio(resolveCropAspectRatio());
   updateCropUI(true);
   updateAdjustmentsUI();
+  updateFilterUI();
+  updateResizeUI(true);
   updateHistoryUI();
   updateTransformUI();
 }
@@ -518,6 +569,61 @@ function updateAdjustmentsUI() {
   if (activeScreen === 'editor') {
     updateEditorAdjustmentsUI(dashboard, activeAdjustments, { hasImage: Boolean(activeImage), disabled: cropMode });
   }
+}
+
+function updateFilterUI() {
+  if (activeScreen === 'editor') {
+    updateEditorFilterUI(dashboard, activeFilter, { hasImage: Boolean(activeImage), disabled: cropMode });
+  }
+}
+
+function updateResizeUI(force = false) {
+  if (activeScreen !== 'editor') return;
+  const base = getBaseOutputDimensions();
+  updateEditorResizeUI(dashboard, {
+    hasImage: Boolean(activeImage), disabled: cropMode,
+    baseWidth: base?.width ?? 0, baseHeight: base?.height ?? 0,
+    resize: activeResize, force,
+  });
+}
+
+function updateResizeFromInput(input) {
+  if (!activeImage || cropMode) return;
+  const widthInput = dashboard.querySelector('[data-resize-width]');
+  const heightInput = dashboard.querySelector('[data-resize-height]');
+  const lock = dashboard.querySelector('[data-resize-lock]');
+  const base = getBaseOutputDimensions();
+  if (!widthInput?.value || !heightInput?.value || !base) return;
+  try {
+    const dimensions = createResizeDimensions(
+      base.width, base.height, widthInput.value, heightInput.value,
+      input.matches('[data-resize-width]') ? 'width' : 'height', Boolean(lock?.checked),
+    );
+    activeResize = isResizeAtOriginalSize(dimensions, base.width, base.height) ? null : dimensions;
+    clearResizeError();
+    updateResizeUI();
+  } catch (error) {
+    setResizeError(error instanceof Error ? error.message : 'The requested output size is not available.');
+  }
+}
+
+function getBaseOutputDimensions() {
+  if (!activeImage) return null;
+  return getExportGeometry(activeImage.image.naturalWidth, activeImage.image.naturalHeight, activeTransform, activeCrop);
+}
+
+function setResizeError(message) {
+  const status = dashboard.querySelector('[data-resize-error]');
+  if (!status) return;
+  status.textContent = message;
+  status.hidden = false;
+}
+
+function clearResizeError() {
+  const status = dashboard.querySelector('[data-resize-error]');
+  if (!status) return;
+  status.textContent = '';
+  status.hidden = true;
 }
 
 function toggleCropOrientation() {
@@ -541,6 +647,8 @@ function updateCropUI(forceDimensions = false) {
   updateHistoryUI();
   updateTransformUI();
   updateAdjustmentsUI();
+  updateFilterUI();
+  updateResizeUI();
 }
 
 function resolveCropAspectRatio() {
@@ -572,6 +680,8 @@ window.addEventListener('pagehide', (event) => {
   activeImage = null;
   activeTransform = { ...DEFAULT_TRANSFORM };
   activeAdjustments = { ...DEFAULT_ADJUSTMENTS };
+  activeFilter = 'original';
+  activeResize = null;
   activeCrop = null;
   activeCropRatio = 'freeform';
   originalCropRatioInverted = false;
