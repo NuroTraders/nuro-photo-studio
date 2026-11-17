@@ -1,6 +1,6 @@
 # Nuro Photo Studio — Handover
 
-**Current milestone:** Phase 2 — Task 7 full-resolution Export Engine implemented and awaiting user manual verification; Phase 1 Task 7 runtime checks remain open
+**Current milestone:** Phase 2 core editor (Tasks 1–7) accepted by the user; next planned feature is non-destructive color and tone adjustments. Phase 1 runtime/release checks remain open.
 **Specification baseline:** NPS-TS-001 v1.0 (draft engineering baseline)  
 **App version:** 0.2.0 (see Version history below)
 **State:** Local image loading, Canvas 2D viewing, non-destructive quarter-turn rotation/flips, crop preview/apply/reset with drag-to-draw, bounded session-only undo/redo for committed edits, and full-resolution local export are implemented. Automated checks pass. Runtime verification status is recorded below. No AI behavior was added.
@@ -53,9 +53,9 @@ Completed:
 6. **Responsive design and theme switching:** added early theme restoration from local storage before stylesheet paint, persistent toggle updates, touch target sizing, and narrow-screen safeguards for panels, dialogs and menus. Reduced-motion styles remain enabled.
 7. **Testing and stabilization:** build and structural validation pass; fixed two production asset path defects (theme initializer omitted from build and manifest/icon precache paths hashed by Vite). Static assets now live under `www/public/`. Runtime responsive, dialog, browser console, offline-cache and packaged Electron checks are still outstanding; do not declare Phase 1 complete until those checks are run.
 
-Phase 2 core Tasks 1–7 are implemented. Tasks 2, 3, and 4 have recorded user acceptance. Tasks 5–7 were implemented with automated validation; manual verification/acceptance should be confirmed with the user. The current version is `0.2.0`.
+Phase 2 core Tasks 1–7 are implemented and accepted by the user (reported 2026-11-17). The user confirmed the Crop, Undo/Redo, and Export work has been manually checked and is okay. Task 7 coding-agent validation remained command-line-only as required; this user confirmation is separate evidence. The current version is `0.2.0`.
 
-Next review gates: user verification of crop, history, and export behavior; then close the carried Phase 1 runtime checks for narrow layouts, browser console/dialog/focus, service worker/offline behavior, and packaged Electron. Task 7's coding-agent task explicitly prohibited runtime UI checks, so those results are not claimed here.
+Next implementation: scoped non-destructive color and tone adjustments, integrated with session history and full-resolution export. The separate carried Phase 1 runtime/release checks remain open: narrow layouts, browser console/dialog/focus, service worker/offline behavior, and packaged Electron. Task 7's coding-agent task explicitly prohibited runtime UI checks; the user later confirmed manual verification was completed and accepted.
 
 Future roadmap, subject to separate scope and acceptance:
 
@@ -158,7 +158,7 @@ No source image mutation, external library, version bump, or export behavior was
 
 ## Crop Box Orientation Rotate — Ratio & Dimension Swap
 
-**Status:** Implemented; awaiting user manual verification. App version remains `0.1.0`.
+**Status:** Implemented and accepted by the user (confirmed 2026-11-17). App version remains `0.1.0` for this historical task section.
 
 ### Changes
 
@@ -177,7 +177,7 @@ No package version change. Task 6 was started only after the user's explicit req
 
 ## Phase 2 Task 6: Undo / Redo History Engine
 
-**Status:** Implemented; awaiting user manual verification. App version remains `0.1.0`.
+**Status:** Implemented and accepted by the user (confirmed 2026-11-17). App version remains `0.1.0` for this historical task section.
 
 ### Changes
 
@@ -199,7 +199,7 @@ No package version change at Task 6 completion. The user subsequently requested 
 
 ## Phase 2 Task 7: Full-Resolution Export Engine
 
-**Status:** Implemented; awaiting user manual verification. App version is `0.2.0`.
+**Status:** Implemented and accepted by the user (confirmed 2026-11-17). App version is `0.2.0`.
 
 ### Changes
 
@@ -217,7 +217,7 @@ No package version change at Task 6 completion. The user subsequently requested 
 - `git diff --check` — passed; Git printed working-copy LF-to-CRLF notices.
 - Per the task instruction, no browser, Electron, background server, or manual UI runtime test was launched. Follow the manual verification guide in the final Task 7 report.
 
-Phase 2 core editing is implemented. No Task 8 or additional feature work was started.
+Phase 2 core editing is implemented and accepted by the user. No Task 8 or additional feature work was started.
 
 ## Decisions and open items
 

@@ -1,6 +1,6 @@
 # Nuro Photo Studio — Project Memory for New Chats
 
-**Updated:** 2026-11-17 (after user visual review of branding)
+**Updated:** 2026-11-17 (after user acceptance of core editing Tasks 5–7)
 **Repository:** `NuroTraders/nuro-photo-studio` — https://github.com/NuroTraders/nuro-photo-studio
 **Current version:** `0.2.0`
 **Purpose:** Portable project context, verified repository position, product boundaries, roadmap, and handoff instructions. Read this and the live `HANDOVER.md` before editing.
@@ -13,12 +13,12 @@ Verified in this workspace on 2026-11-17:
 
 - Workspace: `C:\Users\User\Desktop\nuro-photo-studio-phase-0`.
 - Branch: `main`.
-- `HEAD`: `1ebe74b63ffe5e4a6a820ed872a36c4384046b03` (`Record branding visual approval`).
+- `HEAD`: `c6050dcbeea99f5a4c29e4d18d7c6f2108598fc2` (`Update project memory after moving local files`).
 - `origin/main` resolves to the same commit. The configured fetch and push remote is `https://github.com/NuroTraders/nuro-photo-studio.git`.
 - `package.json` and the root package entry in `package-lock.json` both report `0.2.0`. Sidebar and About screen strings report `v0.2.0` / `0.2.0`.
-- The branding implementation and user's visual approval note are committed and pushed. At the recorded base commit the tracked tree was clean; this project-memory refresh now modifies only this file. At the user's request, the unrelated `fold-project-complete.zip` and root `public/` folder were moved intact to `C:\Users\User\Desktop\Nuro Photo Studio Local Files\`; they are now outside the repository and no longer untracked project items.
+- The branding implementation and user's visual approval note are committed and pushed. At the recorded base commit the tracked tree was clean; this update now modifies root `HANDOVER.md` and this memory file to record acceptance of Tasks 5–7. At the user's request, the unrelated `fold-project-complete.zip` and root `public/` folder were moved intact to `C:\Users\User\Desktop\Nuro Photo Studio Local Files\`; they are outside the repository and no longer untracked project items.
 - The last recorded Task 7 checks (run at implementation time, not rerun during this documentation update): `npm test` passed 35/35, `npm run check` passed with 21 required files, `npm run build` passed, and `git diff --check` passed. Vite reports the existing informational notice that static `theme-init.js` cannot be bundled without `type="module"`; Git prints working-copy LF/CRLF notices.
-- No browser, Electron, server, or manual runtime check was performed for Task 7, as explicitly prohibited by that task. Export dialog/download behavior is therefore awaiting user manual verification.
+- The coding agent did not launch a browser/Electron runtime for Task 7 because the task explicitly prohibited it. On 2026-11-17 the user confirmed manual verification of Crop, Undo/Redo, and Export was completed and all three were okay; treat Tasks 5–7 as user-accepted. Do not claim a coding-agent runtime test.
 
 Evidence terms in this memory:
 
@@ -56,12 +56,12 @@ The user supplied the NasirPintu brand kit and Fold toolkit screenshots as visua
 | Task 2: canvas viewport | Accepted by user | Fit, actual size, zoom, pan, resize, DPR cap and lifecycle. Earlier integration issues are historical and reported corrected. |
 | Task 3: viewport stabilization | Accepted by user with limits | Physical touch pinch and live DPR>1 rendering were not verified in the recorded test; do not present mocks as hardware evidence. |
 | Task 4: rotate/flip | Accepted by user in the Task 5 brief | 90° rotate, flips and shortcuts; non-destructive transform metadata. |
-| Task 5: crop | Implemented; user manual review/acceptance status should be reconfirmed | Draw/resize/move, crop preview/apply/cancel/reset, aspect presets, W/H, orientation toggle/X. No crop interaction mutates source pixels. |
-| Task 6: undo/redo | Implemented; user manual review/acceptance status should be reconfirmed | Bounded 50-entry session memento history for rotate, flip, applied crop and crop reset. Keyboard shortcuts. History resets on replace/close. |
-| Task 7: export and version bump | Implemented; awaiting user manual verification/acceptance | Full-resolution offscreen render to PNG/JPEG/WebP; quality control for lossy formats; `0.2.0`. No runtime testing by coding agent due explicit task restriction. |
+| Task 5: crop | Implemented and accepted by user (2026-11-17) | User confirmed manual verification completed. Draw/resize/move, preview/apply/cancel/reset, aspect presets, W/H and orientation toggle/X. |
+| Task 6: undo/redo | Implemented and accepted by user (2026-11-17) | User confirmed manual verification completed. Bounded 50-entry session memento history for rotate, flip, applied crop and crop reset; history resets on replace/close. |
+| Task 7: export and version bump | Implemented and accepted by user (2026-11-17) | User confirmed manual verification completed. Full-resolution offscreen render to PNG/JPEG/WebP; quality control for lossy formats; version `0.2.0`. The coding agent ran only required command-line checks. |
 | Export engine behavior | Implemented in `www/js/processing/export-engine.js` | Uses original decoded source and edit state, never viewport canvas; crop coordinates in source space; quarter-turn bounds; blob download and temporary URL cleanup. Large-image memory pressure remains a manual/real-device follow-up. |
 
-Do not infer acceptance of Tasks 5–7 from implementation, passing tests, commit presence, or version bump. Ask the user for acceptance only after they have a reviewable build and manual test results, unless the user has already supplied that acceptance in a later message.
+The user has accepted Tasks 5–7; do not ask them to repeat that confirmation. For future tasks, distinguish implementation, automated checks, user manual verification and release status.
 
 ## 4. Architecture and important paths
 
@@ -83,11 +83,11 @@ The formal `NPS-TS-001 v1.0 Technical Specification` is referenced in prior proj
 
 The repo’s documents use two naming systems: the recent conversation calls the core editor work “Phase 2 Tasks 1–7”; `docs/INITIALIZATION-PLAN.md` calls the later product areas Phases 2–6. Preserve both labels when useful and do not renumber without user direction.
 
-### Immediate: finish core editor acceptance
+### Immediate: continue core editing
 
-1. User manually verifies Task 7 export dialog, formats, downloaded dimensions/quality, and source preservation. Also confirm whether Tasks 5 and 6 have been accepted.
-2. Reconcile root `HANDOVER.md`’s stale historical planning paragraphs with the current Task 7 position. Its top banner and Task 7 section are current, but some earlier Phase 1/2 roadmap text still says Tasks 5–7 are pending or says export has not started. Keep historical task notes, correct only misleading “current/next” summaries.
-3. Do not start expansion work until the user approves the core milestone, unless explicitly instructed to continue.
+1. Phase 2 core editor Tasks 1–7 are accepted by the user (2026-11-17).
+2. Next planned implementation is non-destructive color and tone adjustments with preview controls, history integration and full-resolution export support. Before implementation, read current source and define control ranges, state model, history grouping, and export behavior. The user has confirmed the core milestone, so no further acceptance gate is needed before this next feature.
+3. Keep the carried Phase 1 runtime/release checks (responsive layouts, browser dialog/focus, service worker/offline behavior, packaged Electron) visible as a separate quality/release follow-up; they do not block planning the next feature unless a new task specifies otherwise.
 
 ### Classical editing continuation (initialization-plan Phase 2)
 
@@ -163,4 +163,4 @@ Current Task 7 automated evidence is recorded above and in `HANDOVER.md`; it was
 
 ## 9. Suggested prompt for a new chat
 
-> Read `docs/Nuro_Photo_Studio_Project_Memory_Handover.md`, root `HANDOVER.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/BRANDING.md`, and source relevant to my task. Work only in `NuroTraders/nuro-photo-studio`. Current base (2026-11-17) is branch `main`, `HEAD`/`origin/main` `1ebe74b63ffe5e4a6a820ed872a36c4384046b03`, version `0.2.0`; the memory update after that commit is uncommitted. The unrelated ZIP and `public/` folder were moved outside the repo to `C:\Users\User\Desktop\Nuro Photo Studio Local Files\`; leave them there unless asked. Branding is committed/pushed and visually accepted by the user from deployed screenshots. Branding uses vanilla JS/CSS, owner-supplied portrait, and shared dialog; do not import React/Lucide or imply AI photo processing. Phase 2 core Tasks 1–7 are implemented; Task 7 still awaits manual review/acceptance. Follow the current task’s testing and authorization limits, preserve source photos, do not add cloud processing, and do not commit/push unless I explicitly ask. Include explicit commit and push commands in implementation reports, but do not execute them without authorization.
+> Read `docs/Nuro_Photo_Studio_Project_Memory_Handover.md`, root `HANDOVER.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/BRANDING.md`, and source relevant to my task. Work only in `NuroTraders/nuro-photo-studio`. Latest base on 2026-11-17 is branch `main`, `HEAD`/`origin/main` `c6050dcbeea99f5a4c29e4d18d7c6f2108598fc2`, version `0.2.0`; documentation edits after this commit may be uncommitted, so check `git status`. The unrelated ZIP and `public/` folder were moved outside the repo to `C:\Users\User\Desktop\Nuro Photo Studio Local Files\`; leave them there unless asked. Branding is committed/pushed and visually accepted from deployed screenshots. Branding uses vanilla JS/CSS, owner-supplied portrait, and shared dialog; do not import React/Lucide or imply AI photo processing. Phase 2 core Tasks 1–7 are implemented and accepted by the user, including manual verification of Tasks 5–7. Next planned implementation is non-destructive color/tone adjustments integrated with history and export. Carried Phase 1 runtime/release checks remain open. Follow the current task's testing limits, preserve source photos, do not add cloud processing, and do not commit/push unless explicitly asked. Include explicit commit and push commands in implementation reports, but do not execute them without authorization.
