@@ -1,6 +1,6 @@
 # Nuro Photo Studio — Project Memory for New Chats
 
-**Updated:** 2026-11-17
+**Updated:** 2026-11-17 (after user visual review of branding)
 **Repository:** `NuroTraders/nuro-photo-studio` — https://github.com/NuroTraders/nuro-photo-studio
 **Current version:** `0.2.0`
 **Purpose:** Portable project context, verified repository position, product boundaries, roadmap, and handoff instructions. Read this and the live `HANDOVER.md` before editing.
@@ -13,10 +13,10 @@ Verified in this workspace on 2026-11-17:
 
 - Workspace: `C:\Users\User\Desktop\nuro-photo-studio-phase-0`.
 - Branch: `main`.
-- `HEAD`: `358572c26a9aae4167bea365ac40d47eb4588670` (`Add full-resolution image export`).
-- `origin/main` resolves to the same commit. The configured fetch and push remote is `https://github.com/NuroTraders/nuro-photo-studio.git`; no remote fetch/push was performed for this audit.
+- `HEAD`: `f80088e20b9c50fd2579737e9d057aa9dd7ab65b` (`Add NasirPintu branding and credits`).
+- `origin/main` resolves to the same commit. The configured fetch and push remote is `https://github.com/NuroTraders/nuro-photo-studio.git`.
 - `package.json` and the root package entry in `package-lock.json` both report `0.2.0`. Sidebar and About screen strings report `v0.2.0` / `0.2.0`.
-- At the start of this audit, the tracked tree was clean. This documentation update now modifies root `HANDOVER.md` and this memory file. Git also shows two pre-existing untracked items: `fold-project-complete.zip` and `public/`. They were not opened, changed, staged, or removed. Treat them as user-owned until the user identifies them; do not add them to commits by default.
+- The branding implementation is committed and pushed. Current tracked changes are limited to updating this handover and memory with the user's visual acceptance. Git also shows two unrelated untracked items: `fold-project-complete.zip` and `public/`. They were not opened, changed, staged, or removed. Treat them as user-owned and do not add them to commits by default.
 - The last recorded Task 7 checks (run at implementation time, not rerun during this documentation update): `npm test` passed 35/35, `npm run check` passed with 21 required files, `npm run build` passed, and `git diff --check` passed. Vite reports the existing informational notice that static `theme-init.js` cannot be bundled without `type="module"`; Git prints working-copy LF/CRLF notices.
 - No browser, Electron, server, or manual runtime check was performed for Task 7, as explicitly prohibited by that task. Export dialog/download behavior is therefore awaiting user manual verification.
 
@@ -45,7 +45,7 @@ Product principles:
 
 ### Current brand implementation (2026-11-17)
 
-The user supplied the NasirPintu brand kit and Fold toolkit screenshots as visual/reference material and requested adapting that branding model to Nuro Photo Studio. The implementation adds a persistent creator signature (sidebar on wide layouts, top bar on narrow layouts) that opens an accessible About/Credits dialog. It includes the owner-supplied creator portrait, social links, provided AI collaboration credits, actual MIT build/desktop toolchain credits, and the local-only/no-telemetry privacy statement. `docs/BRANDING.md` records maintenance guidance; `docs/LICENSES.md` now reflects current dependencies/assets. UI implementation is vanilla JS/CSS using the shared native dialog. Do not import the React/Lucide sample or imply that credited AI services are used to process photos. At memory refresh time these branding changes are uncommitted and command-line validation remains pending.
+The user supplied the NasirPintu brand kit and Fold toolkit screenshots as visual/reference material and requested adapting that branding model to Nuro Photo Studio. The implementation adds a persistent creator signature (sidebar on wide layouts, top bar on narrow layouts) that opens an accessible About/Credits dialog. It includes the owner-supplied creator portrait, social links, provided AI collaboration credits, actual MIT build/desktop toolchain credits, and the local-only/no-telemetry privacy statement. `docs/BRANDING.md` records maintenance guidance; `docs/LICENSES.md` reflects current dependencies/assets. UI implementation is vanilla JS/CSS using the shared native dialog. Do not import the React/Lucide sample or imply that credited AI services are used to process photos. The branding is committed in `f80088e` and pushed. User provided screenshots of both the dialog's opening and scrolled states and confirmed “implemented okay”; record branding as user-visually-reviewed and accepted. The coding agent did not launch the UI.
 
 ## 3. Implementation status
 
@@ -163,4 +163,4 @@ Current Task 7 automated evidence is recorded above and in `HANDOVER.md`; it was
 
 ## 9. Suggested prompt for a new chat
 
-> Read `docs/Nuro_Photo_Studio_Project_Memory_Handover.md`, root `HANDOVER.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/BRANDING.md`, and source relevant to my task. Work only in `NuroTraders/nuro-photo-studio`. Current base is branch `main`, `HEAD`/`origin/main` `358572c26a9aae4167bea365ac40d47eb4588670`, version `0.2.0`. The branding update dated 2026-11-17 is currently uncommitted; inspect `git status` before making changes. Preserve unrelated untracked `fold-project-complete.zip` and root `public/` and do not stage them. Branding uses vanilla JS/CSS, owner-supplied portrait, and shared dialog; do not import React/Lucide or imply AI photo processing. Phase 2 core Tasks 1–7 are implemented; Task 7 awaits my manual review/acceptance. Follow the current task’s testing and authorization limits, preserve source photos, do not add cloud processing, and do not commit/push unless I explicitly ask. Include explicit commit and push commands in implementation reports, but do not execute them without authorization.
+> Read `docs/Nuro_Photo_Studio_Project_Memory_Handover.md`, root `HANDOVER.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/BRANDING.md`, and source relevant to my task. Work only in `NuroTraders/nuro-photo-studio`. Current base is branch `main`, `HEAD`/`origin/main` `f80088e20b9c50fd2579737e9d057aa9dd7ab65b`, version `0.2.0`. Branding is committed/pushed and user visually accepted it from deployed screenshots. Preserve unrelated untracked `fold-project-complete.zip` and root `public/`; do not stage them. Branding uses vanilla JS/CSS, owner-supplied portrait, and shared dialog; do not import React/Lucide or imply AI photo processing. Phase 2 core Tasks 1–7 are implemented; Task 7 still awaits manual review/acceptance. Follow the current task’s testing and authorization limits, preserve source photos, do not add cloud processing, and do not commit/push unless I explicitly ask. Include explicit commit and push commands in implementation reports, but do not execute them without authorization.

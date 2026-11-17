@@ -229,7 +229,7 @@ Phase 2 core editing is implemented. No Task 8 or additional feature work was st
 
 ## Update log
 
-- Branding model (2026-11-17): added the NasirPintu creator attribution entry in the sidebar and responsive top bar, plus an accessible About/Credits dialog with owner-supplied portrait, social profiles, collaboration and toolchain credits, and local-privacy statement. Branding is implemented in vanilla JS/CSS and documented in `docs/BRANDING.md`; `docs/LICENSES.md` records the supplied portrait and actual toolchain inventory. No React, Lucide, hosted fonts, telemetry, or image-processing dependency was added. Automated validation is pending for this update; no runtime UI was opened.
+- Branding model (2026-11-17): added the NasirPintu creator attribution entry in the sidebar and responsive top bar, plus an accessible About/Credits dialog with owner-supplied portrait, social profiles, collaboration and toolchain credits, and local-privacy statement. Branding is implemented in vanilla JS/CSS and documented in `docs/BRANDING.md`; `docs/LICENSES.md` records the supplied portrait and actual toolchain inventory. No React, Lucide, hosted fonts, telemetry, or image-processing dependency was added. `npm run check`, `npm run build`, and `git diff --check` passed. User supplied screenshots of the deployed dialog's opening and scrolled states and confirmed “implemented okay”; treat branding as visually reviewed and accepted. The coding agent did not launch a runtime UI.
 
 - Phase 0: initial project skeleton authored from the referenced v1.0 specification and proposal context.
 - PWA Pages follow-up: use the explicit project-site start URL and scope, publish the service worker with the Vite build, and keep precache entries aligned with production output.
