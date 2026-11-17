@@ -1,12 +1,13 @@
 import { registerServiceWorker } from './bootstrap.js';
 import { renderDashboard } from './dashboard.js';
-import { renderFeatureScreen, updateEditorImageUI, updateEditorCropUI, updateEditorHistoryUI, updateEditorTransformUI } from './feature-screens.js';
+import { renderFeatureScreen, updateEditorImageUI, updateEditorCropUI, updateEditorHistoryUI, updateEditorTransformUI, updateEditorAdjustmentsUI } from './feature-screens.js';
 import { navigationItems } from './navigation.js';
 import { loadImageFile, releaseLoadedImage, ImageImportError } from './editor/image-loader.js';
 import { createAppState } from './core/state.js';
 import { createEditHistory } from './core/edit-history.js';
 import { createDialog } from './ui/components.js';
 import { createAboutCreditsContent } from './branding/about-credits.js';
+import { DEFAULT_ADJUSTMENTS, hasAdjustmentChanges, normalizeAdjustments, setAdjustmentValue } from './processing/adjustments.js';
 import {
   clampExportQuality, downloadEditedImage, generateExportFilename, getExportFormat, getExportGeometry,
 } from './processing/export-engine.js';
@@ -30,6 +31,7 @@ let importSequence = 0;
 let activeScreen = 'home';
 let editorViewport = null;
 let activeTransform = { ...DEFAULT_TRANSFORM };
+let activeAdjustments = { ...DEFAULT_ADJUSTMENTS };
 let activeCrop = null;
 let cropMode = false;
 let activeCropRatio = 'freeform';
@@ -114,6 +116,7 @@ dashboard.addEventListener('click', (event) => {
   if (event.target.closest('[data-crop-orientation]')) toggleCropOrientation();
   const historyAction = event.target.closest('[data-history-action]')?.dataset.historyAction;
   if (historyAction) runHistoryAction(historyAction);
+  if (event.target.closest('[data-adjustment-action="reset"]')) runAdjustmentAction('reset');
 });
 dashboard.addEventListener('input', (event) => {
   if (event.target.matches('[data-viewport-zoom]')) {
@@ -128,6 +131,11 @@ dashboard.addEventListener('input', (event) => {
       event.target.matches('[data-crop-width]') ? 'width' : 'height',
     );
     updateCropUI();
+  } else if (event.target.matches('[data-adjustment]')) {
+    if (!activeImage || cropMode) return;
+    activeAdjustments = setAdjustmentValue(activeAdjustments, event.target.dataset.adjustment, event.target.value);
+    editorViewport?.setAdjustments(activeAdjustments);
+    updateAdjustmentsUI();
   }
 });
 
@@ -141,6 +149,11 @@ dashboard.addEventListener('change', (event) => {
   }
   if (event.target.matches('[data-crop-width], [data-crop-height]')) {
     updateCropUI(true);
+    return;
+  }
+  if (event.target.matches('[data-adjustment]')) {
+    if (activeImage && !cropMode && editHistory.push(createEditSnapshot())) updateHistoryUI();
+    updateAdjustmentsUI();
     return;
   }
   const input = event.target.closest('[data-image-file-input]');
@@ -192,6 +205,7 @@ async function importImage(file) {
     const previousImage = activeImage;
     activeImage = loadedImage;
     activeTransform = { ...DEFAULT_TRANSFORM };
+    activeAdjustments = { ...DEFAULT_ADJUSTMENTS };
     activeCrop = null;
     cropMode = false;
     activeCropRatio = 'freeform';
@@ -202,9 +216,11 @@ async function importImage(file) {
     else if (editorViewport) {
       editorViewport.setImage(loadedImage.image);
       editorViewport.setTransform(activeTransform);
+      editorViewport.setAdjustments(activeAdjustments);
       editorViewport.setCropAspectRatio(null);
       updateEditorImageUI(dashboard, loadedImage);
       updateCropUI();
+      updateAdjustmentsUI();
       updateHistoryUI();
     } else renderEditorScreen();
     releaseLoadedImage(previousImage);
@@ -230,6 +246,7 @@ function closeCurrentImage() {
   importSequence += 1;
   editorViewport?.setImage(null);
   activeTransform = { ...DEFAULT_TRANSFORM };
+  activeAdjustments = { ...DEFAULT_ADJUSTMENTS };
   activeCrop = null;
   cropMode = false;
   activeCropRatio = 'freeform';
@@ -239,7 +256,7 @@ function closeCurrentImage() {
   activeImage = null;
   appState.setActiveDocument(null);
   if (!updateEditorImageUI(dashboard, null)) renderEditorScreen();
-  else updateCropUI();
+  else { updateCropUI(); updateAdjustmentsUI(); }
   dashboard.querySelector('[data-open-image]')?.focus();
 }
 
@@ -339,6 +356,7 @@ function openExportDialog() {
             await downloadEditedImage({
               image: activeImage.image,
               transform: activeTransform,
+              adjustments: activeAdjustments,
               crop: activeCrop,
               format: formatSelect.value,
               quality: Number(qualityInput.value),
@@ -384,9 +402,11 @@ function renderEditorScreen() {
   });
   editorViewport.setImage(activeImage?.image ?? null);
   editorViewport.setTransform(activeTransform);
+  editorViewport.setAdjustments(activeAdjustments);
   if (activeCrop) editorViewport.setCrop(activeCrop);
   editorViewport.setCropAspectRatio(resolveCropAspectRatio());
   updateCropUI();
+  updateAdjustmentsUI();
   updateHistoryUI();
   updateTransformUI();
 }
@@ -412,10 +432,19 @@ function runTransformAction(action) {
   else if (action === 'flip-vertical') activeTransform = toggleFlipVertical(activeTransform);
   else return;
   editorViewport.setTransform(activeTransform);
+  editorViewport.setAdjustments(activeAdjustments);
   editorViewport.setCropAspectRatio(resolveCropAspectRatio());
   editHistory.push(createEditSnapshot());
   updateHistoryUI();
   updateTransformUI();
+}
+
+function runAdjustmentAction(action) {
+  if (action !== 'reset' || !activeImage || !editorViewport || cropMode || !hasAdjustmentChanges(activeAdjustments)) return;
+  activeAdjustments = { ...DEFAULT_ADJUSTMENTS };
+  editorViewport.setAdjustments(activeAdjustments);
+  if (editHistory.push(createEditSnapshot())) updateHistoryUI();
+  updateAdjustmentsUI();
 }
 
 function runCropAction(action) {
@@ -441,6 +470,7 @@ function runCropAction(action) {
 function createEditSnapshot() {
   return {
     ...activeTransform,
+    adjustments: { ...activeAdjustments },
     crop: activeCrop ? { x: activeCrop.x, y: activeCrop.y, width: activeCrop.width, height: activeCrop.height } : null,
     aspectRatio: activeCropRatio === 'freeform'
       ? null
@@ -466,19 +496,28 @@ function runHistoryAction(action) {
     flipHorizontal: restored.flipHorizontal,
     flipVertical: restored.flipVertical,
   };
+  activeAdjustments = normalizeAdjustments(restored.adjustments ?? DEFAULT_ADJUSTMENTS);
   activeCrop = restored.crop;
   activeCropRatio = restored.aspectRatio?.startsWith('original') ? 'original' : restored.aspectRatio || 'freeform';
   originalCropRatioInverted = restored.aspectRatio === 'original:inverted';
   editorViewport?.setTransform(activeTransform);
+  editorViewport?.setAdjustments(activeAdjustments);
   editorViewport?.setCrop(activeCrop);
   editorViewport?.setCropAspectRatio(resolveCropAspectRatio());
   updateCropUI(true);
+  updateAdjustmentsUI();
   updateHistoryUI();
   updateTransformUI();
 }
 
 function updateTransformUI() {
   if (activeScreen === 'editor') updateEditorTransformUI(dashboard, activeTransform);
+}
+
+function updateAdjustmentsUI() {
+  if (activeScreen === 'editor') {
+    updateEditorAdjustmentsUI(dashboard, activeAdjustments, { hasImage: Boolean(activeImage), disabled: cropMode });
+  }
 }
 
 function toggleCropOrientation() {
@@ -501,6 +540,7 @@ function updateCropUI(forceDimensions = false) {
   if (exportButton) exportButton.disabled = !activeImage || cropMode;
   updateHistoryUI();
   updateTransformUI();
+  updateAdjustmentsUI();
 }
 
 function resolveCropAspectRatio() {
@@ -531,6 +571,7 @@ window.addEventListener('pagehide', (event) => {
   releaseLoadedImage(activeImage);
   activeImage = null;
   activeTransform = { ...DEFAULT_TRANSFORM };
+  activeAdjustments = { ...DEFAULT_ADJUSTMENTS };
   activeCrop = null;
   activeCropRatio = 'freeform';
   originalCropRatioInverted = false;

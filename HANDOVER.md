@@ -1,9 +1,9 @@
 # Nuro Photo Studio — Handover
 
-**Current milestone:** Phase 2 core editor (Tasks 1–7) accepted by the user; next planned feature is non-destructive color and tone adjustments. Phase 1 runtime/release checks remain open.
+**Current milestone:** Phase 2 core editor (Tasks 1–7) accepted by the user; first classical color/tone adjustment slice is being implemented. Phase 1 runtime/release checks remain open.
 **Specification baseline:** NPS-TS-001 v1.0 (draft engineering baseline)  
 **App version:** 0.2.0 (see Version history below)
-**State:** Local image loading, Canvas 2D viewing, non-destructive quarter-turn rotation/flips, crop preview/apply/reset with drag-to-draw, bounded session-only undo/redo for committed edits, and full-resolution local export are implemented. Automated checks pass. Runtime verification status is recorded below. No AI behavior was added.
+**State:** Local image loading, Canvas 2D viewing, non-destructive quarter-turn rotation/flips, crop preview/apply/reset with drag-to-draw, session-only undo/redo, full-resolution local export, and a first brightness/contrast/saturation adjustment set are implemented. Adjustment controls preview in Canvas 2D, are stored as edit metadata, and are included in full-resolution export. Automated validation for this adjustment slice is pending. No AI behavior was added.
 
 ## What is here
 
@@ -18,7 +18,7 @@
 - Dedicated Canvas 2D viewport in `www/js/editor/viewport.js` with fit, actual-size, zoom and pan behavior; it draws the loader's decoded image without altering the source file.
 - Pure serializable transform state in `www/js/editor/transform-tool.js`, applied only during viewport rendering.
 - Pure crop geometry in `www/js/editor/crop-tool.js`; crop state maps between original image coordinates and the currently transformed visual coordinates.
-- Bounded immutable edit snapshots in `www/js/core/edit-history.js`; history stores only transform/crop metadata and clears on image replacement or close.
+- Bounded immutable edit snapshots in `www/js/core/edit-history.js`; history stores only transform/crop/adjustment metadata and clears on image replacement or close.
 - Validation/build helper scripts and npm lockfile.
 
 ## Deliberate boundaries
@@ -27,7 +27,7 @@
 - No AI runtime, model weights, inference, model download, or CDN runtime.
 - No image upload or cloud service. Imported photos remain local.
 - Project persistence and recent-project records are not implemented or fabricated. The selected appearance theme is saved locally as a UI preference.
-- Signing, updates, analytics, project persistence, ID compliance presets, AI, batch processing and advanced image adjustments are deferred.
+- Signing, updates, analytics, project persistence, ID compliance presets, AI, batch processing, additional filters and resizing are deferred.
 
 ## Collaboration rules
 
@@ -55,7 +55,7 @@ Completed:
 
 Phase 2 core Tasks 1–7 are implemented and accepted by the user (reported 2026-11-17). The user confirmed the Crop, Undo/Redo, and Export work has been manually checked and is okay. Task 7 coding-agent validation remained command-line-only as required; this user confirmation is separate evidence. The current version is `0.2.0`.
 
-Next implementation: scoped non-destructive color and tone adjustments, integrated with session history and full-resolution export. The separate carried Phase 1 runtime/release checks remain open: narrow layouts, browser console/dialog/focus, service worker/offline behavior, and packaged Electron. Task 7's coding-agent task explicitly prohibited runtime UI checks; the user later confirmed manual verification was completed and accepted.
+The initial color/tone adjustment slice (brightness, contrast, saturation) is implemented. `npm run check`, `npm run build`, and `git diff --check` pass; `npm test` was not run. It is integrated with session history and full-resolution export and awaits user review. After review, continue with deterministic filters and resize. Separate carried Phase 1 runtime/release checks remain open: narrow layouts, browser console/dialog/focus, service worker/offline behavior, and packaged Electron. Task 7's coding-agent task explicitly prohibited runtime UI checks; the user later confirmed manual verification was completed and accepted.
 
 Future roadmap, subject to separate scope and acceptance:
 
@@ -229,6 +229,7 @@ Phase 2 core editing is implemented and accepted by the user. No Task 8 or addit
 
 ## Update log
 
+- Color and tone adjustment starter (2026-11-17): added non-destructive Brightness, Contrast, and Saturation controls with live Canvas 2D preview, -100..100 neutral-centered values, grouped Reset, adjustment metadata in bounded session history, restoration through undo/redo, and matching native Canvas filters in full-resolution export. The imported image and source bytes remain untouched. No dependency or version change. `npm run check`, `npm run build`, and `git diff --check` passed; tests and runtime UI validation remain pending.
 - Branding model (2026-11-17): added the NasirPintu creator attribution entry in the sidebar and responsive top bar, plus an accessible About/Credits dialog with owner-supplied portrait, social profiles, collaboration and toolchain credits, and local-privacy statement. Branding is implemented in vanilla JS/CSS and documented in `docs/BRANDING.md`; `docs/LICENSES.md` records the supplied portrait and actual toolchain inventory. No React, Lucide, hosted fonts, telemetry, or image-processing dependency was added. `npm run check`, `npm run build`, and `git diff --check` passed. User supplied screenshots of the deployed dialog's opening and scrolled states and confirmed “implemented okay”; treat branding as visually reviewed and accepted. The coding agent did not launch a runtime UI.
 
 - Phase 0: initial project skeleton authored from the referenced v1.0 specification and proposal context.

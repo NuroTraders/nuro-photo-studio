@@ -3,6 +3,7 @@ import {
   clampCropRect, createFullCrop, mapCropRectToSource, mapCropRectToVisual,
   conformCropRectToAspect, createCropFromPoints, moveCropRect, resizeCropRect, resizeCropToDimensions, swapCropRectDimensions,
 } from './crop-tool.js';
+import { DEFAULT_ADJUSTMENTS, getAdjustmentFilter, normalizeAdjustments } from '../processing/adjustments.js';
 
 const MIN_ZOOM = 0.01;
 const MAX_ZOOM = 8;
@@ -24,6 +25,7 @@ export function createCanvasViewport(canvas, {
   const { signal } = controller;
   let image = null;
   let transform = { ...DEFAULT_TRANSFORM };
+  let adjustments = { ...DEFAULT_ADJUSTMENTS };
   let crop = null;
   let cropMode = false;
   let draftCrop = null;
@@ -62,6 +64,7 @@ export function createCanvasViewport(canvas, {
     setImage(nextImage) {
       image = nextImage && nextImage.naturalWidth > 0 && nextImage.naturalHeight > 0 ? nextImage : null;
       transform = { ...DEFAULT_TRANSFORM };
+      adjustments = { ...DEFAULT_ADJUSTMENTS };
       crop = null;
       cropMode = false;
       draftCrop = null;
@@ -130,6 +133,10 @@ export function createCanvasViewport(canvas, {
       reportZoom();
       scheduleRender();
     },
+    setAdjustments(nextAdjustments) {
+      adjustments = normalizeAdjustments(nextAdjustments);
+      scheduleRender();
+    },
     actualSize,
     zoomIn() { setZoom(zoom * ZOOM_STEP); },
     zoomOut() { setZoom(zoom / ZOOM_STEP); },
@@ -138,6 +145,7 @@ export function createCanvasViewport(canvas, {
       return {
         zoom, panX, panY, fitMode,
         transform: { ...transform },
+        adjustments: { ...adjustments },
         crop: crop ? { ...crop } : null,
         cropMode,
         draftCrop: draftCrop ? { ...draftCrop } : null,
@@ -152,6 +160,7 @@ export function createCanvasViewport(canvas, {
       controller.abort();
       image = null;
       transform = { ...DEFAULT_TRANSFORM };
+      adjustments = { ...DEFAULT_ADJUSTMENTS };
       crop = null;
       cropMode = false;
       draftCrop = null;
@@ -368,6 +377,7 @@ export function createCanvasViewport(canvas, {
       }
       context.rotate(transform.rotation * Math.PI / 180);
       context.scale(transform.flipHorizontal ? -1 : 1, transform.flipVertical ? -1 : 1);
+      context.filter = getAdjustmentFilter(adjustments);
       context.drawImage(image, -image.naturalWidth / 2, -image.naturalHeight / 2, image.naturalWidth, image.naturalHeight);
     } finally {
       context.restore();

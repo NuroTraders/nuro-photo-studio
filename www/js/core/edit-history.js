@@ -52,22 +52,35 @@ function freezeSnapshot(state) {
     width: state.crop.width,
     height: state.crop.height,
   });
+  const adjustments = state.adjustments == null ? null : Object.freeze({
+    brightness: clampAdjustment(state.adjustments.brightness),
+    contrast: clampAdjustment(state.adjustments.contrast),
+    saturation: clampAdjustment(state.adjustments.saturation),
+  });
   return Object.freeze({
     rotation: state.rotation,
     flipHorizontal: Boolean(state.flipHorizontal),
     flipVertical: Boolean(state.flipVertical),
     crop,
     aspectRatio: typeof state.aspectRatio === 'string' ? state.aspectRatio : null,
+    ...(adjustments ? { adjustments } : {}),
   });
 }
 
 function cloneSnapshot(state) {
-  return state == null ? null : {
+  if (state == null) return null;
+  return {
     ...state,
     crop: state.crop ? { ...state.crop } : null,
+    ...(state.adjustments ? { adjustments: { ...state.adjustments } } : {}),
   };
 }
 
 function sameSnapshot(left, right) {
   return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function clampAdjustment(value) {
+  const amount = Number(value);
+  return Number.isFinite(amount) ? Math.min(100, Math.max(-100, Math.round(amount))) : 0;
 }

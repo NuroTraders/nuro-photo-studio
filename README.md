@@ -4,7 +4,7 @@
 
 **Live preview:** [Nuro Photo Studio on GitHub Pages](https://nurotraders.github.io/nuro-photo-studio/)
 
-Independent local-first photo editor for browser/PWA and Windows Electron. Phase 2 core editing includes local image import, Canvas 2D viewing, rotate/flip, crop, session undo/redo, and full-resolution export. AI inference, model downloads, accounts, cloud services, and project saving are not included.
+Independent local-first photo editor for browser/PWA and Windows Electron. Core editing includes local image import, Canvas 2D viewing, rotate/flip, crop, session undo/redo, non-destructive brightness/contrast/saturation adjustments, and full-resolution export. AI inference, model downloads, accounts, cloud services, and project saving are not included.
 
 ## Requirements
 
@@ -18,7 +18,7 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. The app includes a responsive dashboard, theme switch, navigation, and shared UI components. In Photo Editor, open a local JPG/JPEG, PNG or WebP image, or drop one into the workspace. The canvas supports fit-to-screen, actual size, zoom controls, wheel zoom, drag panning, 90-degree rotation, horizontal/vertical flips, and non-destructive crop with drag-to-draw, aspect presets, and pixel dimension controls. Undo and redo history covers rotation, flips, applied crops, and crop reset; it is session-only and clears when an image is replaced or closed. Export creates a full-resolution PNG, JPEG, or WebP download from the original decoded image and edit metadata; JPEG/WebP quality can be adjusted. Imports are limited to 100 MB, 80 megapixels and 20,000 pixels per side. The image remains on-device and its original file is held unchanged; project saving is not yet available.
+Open the local URL printed by Vite. The app includes a responsive dashboard, theme switch, navigation, and shared UI components. In Photo Editor, open a local JPG/JPEG, PNG or WebP image, or drop one into the workspace. The canvas supports fit-to-screen, actual size, zoom controls, wheel zoom, drag panning, 90-degree rotation, horizontal/vertical flips, and non-destructive crop with drag-to-draw, aspect presets, and pixel dimension controls. Brightness, contrast, and saturation use live preview sliders and can be reset together. Undo and redo history covers rotation, flips, applied crops, crop reset, and committed adjustment changes; it is session-only and clears when an image is replaced or closed. Export creates a full-resolution PNG, JPEG, or WebP download from the original decoded image and edit metadata; JPEG/WebP quality can be adjusted. Imports are limited to 100 MB, 80 megapixels and 20,000 pixels per side. The image remains on-device and its original file is held unchanged; project saving is not yet available.
 
 ## PWA preview
 
@@ -48,7 +48,7 @@ www/                 Browser app, PWA assets, ES modules
 www/js/core/         State, event bus, document/history and queue boundaries
 www/js/ui/           Reusable accessible DOM components
 www/js/editor/       Loader, canvas and viewport boundaries
-www/js/processing/   Adjustments and export boundaries
+www/js/processing/   Color/tone adjustment and export logic; filter/resize boundaries
 www/js/features/     Enhancement, ID photo, print and upscaling feature slots
 www/js/ai/           Future runtime/provider/model boundaries (stubs only)
 www/js/workers/      Future worker entry points

@@ -1,4 +1,5 @@
 import { normalizeTransform } from '../editor/transform-tool.js';
+import { getAdjustmentFilter, normalizeAdjustments } from './adjustments.js';
 
 export const EXPORT_FORMATS = Object.freeze({
   png: Object.freeze({ mimeType: 'image/png', extension: 'png', defaultQuality: null }),
@@ -72,7 +73,7 @@ export function normalizeExportFilename(filename, format) {
 }
 
 /** Render at source-pixel resolution to a detached canvas, independent of the viewport canvas. */
-export function renderExportCanvas(image, { transform = {}, crop = null, canvasFactory = () => document.createElement('canvas') } = {}) {
+export function renderExportCanvas(image, { transform = {}, crop = null, adjustments = {}, canvasFactory = () => document.createElement('canvas') } = {}) {
   if (!image || !Number.isFinite(image.naturalWidth) || !Number.isFinite(image.naturalHeight)) {
     throw new TypeError('A decoded source image is required for export.');
   }
@@ -85,6 +86,7 @@ export function renderExportCanvas(image, { transform = {}, crop = null, canvasF
 
   context.imageSmoothingEnabled = true;
   context.imageSmoothingQuality = 'high';
+  context.filter = getAdjustmentFilter(normalizeAdjustments(adjustments));
   context.translate(geometry.width / 2, geometry.height / 2);
   context.rotate(geometry.rotation * Math.PI / 180);
   context.scale(geometry.flipHorizontal ? -1 : 1, geometry.flipVertical ? -1 : 1);
@@ -122,8 +124,8 @@ export function canvasToBlob(canvas, format, quality) {
   });
 }
 
-export async function downloadEditedImage({ image, transform, crop, format, quality, filename, canvasFactory, documentRef = document, urlApi = URL }) {
-  const { canvas, geometry } = renderExportCanvas(image, { transform, crop, canvasFactory });
+export async function downloadEditedImage({ image, transform, crop, adjustments, format, quality, filename, canvasFactory, documentRef = document, urlApi = URL }) {
+  const { canvas, geometry } = renderExportCanvas(image, { transform, crop, adjustments, canvasFactory });
   try {
     const blob = await canvasToBlob(canvas, format, quality);
     const outputName = normalizeExportFilename(filename || generateExportFilename(image.name, format), format);

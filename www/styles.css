@@ -478,6 +478,17 @@ button.quick-action-card:hover { transform: translateY(-2px); border-color: var(
 .transform-icon-button { width: 40px; min-width: 40px; height: 40px; min-height: 40px; padding: 0; border-radius: 11px; }
 .transform-icon-button svg, .crop-action-button svg { display: block; width: 20px; height: 20px; }
 .history-icon-button:disabled { opacity: .4; }
+.adjustment-panel { display: grid; gap: 13px; padding: 15px 16px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface-inset); }
+.adjustment-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.adjustment-panel-header h4 { margin: 0; color: var(--color-text); font-size: var(--text-sm); font-weight: 700; }
+.adjustment-panel-note { margin: -8px 0 0; color: var(--color-text-subtle); font-size: 0.68rem; line-height: 1.4; }
+.adjustment-reset-button { min-height: 32px; padding: 6px 11px; }
+.adjustment-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 20px; }
+.adjustment-field { min-width: 0; display: grid; gap: 8px; color: var(--color-text-muted); font-size: var(--text-xs); }
+.adjustment-field-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.adjustment-field output { min-width: 3ch; color: var(--color-text); font-variant-numeric: tabular-nums; text-align: right; }
+.adjustment-field input[type="range"] { width: 100%; min-height: 24px; margin: 0; accent-color: var(--color-primary); cursor: pointer; }
+.adjustment-field input[type="range"]:disabled { cursor: not-allowed; opacity: .48; }
 .transform-icon-button.is-active { border-color: var(--color-primary); color: var(--color-primary-strong); background: var(--color-surface-raised); }
 .crop-toolbar { width: fit-content; max-width: 100%; gap: 5px; padding: 5px; border: 1px solid var(--color-border); border-radius: var(--radius-pill); background: var(--color-surface-raised); box-shadow: var(--shadow-card); }
 .crop-toolbar [hidden] { display: none; }
@@ -549,6 +560,7 @@ button.quick-action-card:hover { transform: translateY(-2px); border-color: var(
   .status-tile-grid { grid-template-columns: minmax(0, 1fr); }
   .viewport-toolbar { gap: 7px; }
   .viewport-zoom-slider { flex: 1 1 120px; width: auto; }
+  .adjustment-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
 }
 
 /* Touch sizing and narrow-screen safeguards */

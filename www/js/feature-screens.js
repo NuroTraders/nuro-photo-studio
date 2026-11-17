@@ -1,4 +1,5 @@
 import { createBadge, createButton, createCard, createEmptyState } from './ui/components.js';
+import { ADJUSTMENT_RANGES, DEFAULT_ADJUSTMENTS, hasAdjustmentChanges } from './processing/adjustments.js';
 
 const screenCopy = {
   editor: { eyebrow: 'PHOTO WORKSPACE', title: 'Photo Editor', intro: 'Open a local image to view, rotate, flip, crop, undo edits, and export a new full-resolution copy. The original file remains unchanged.' },
@@ -77,7 +78,7 @@ export function updateEditorImageUI(container, image) {
     status.setAttribute('role', 'status');
   }
 
-  workspace.querySelectorAll('[data-viewport-action], [data-transform-action], [data-viewport-zoom], [data-crop-action], [data-crop-ratio], [data-crop-width], [data-crop-height], [data-crop-orientation], [data-export-open]').forEach((control) => {
+  workspace.querySelectorAll('[data-viewport-action], [data-transform-action], [data-viewport-zoom], [data-crop-action], [data-crop-ratio], [data-crop-width], [data-crop-height], [data-crop-orientation], [data-adjustment], [data-adjustment-action], [data-export-open]').forEach((control) => {
     control.disabled = !image;
   });
 
@@ -91,6 +92,22 @@ export function updateEditorHistoryUI(container, { canUndo = false, canRedo = fa
   const redo = container.querySelector('[data-history-action="redo"]');
   if (undo) undo.disabled = disabled || !canUndo;
   if (redo) redo.disabled = disabled || !canRedo;
+}
+
+export function updateEditorAdjustmentsUI(container, adjustments = DEFAULT_ADJUSTMENTS, { hasImage = false, disabled = false } = {}) {
+  const normalized = Object.fromEntries(Object.keys(DEFAULT_ADJUSTMENTS).map((key) => {
+    const amount = Number(adjustments?.[key]);
+    return [key, Number.isFinite(amount) ? amount : 0];
+  }));
+  for (const key of Object.keys(ADJUSTMENT_RANGES)) {
+    const slider = container.querySelector(`[data-adjustment="${key}"]`);
+    const output = container.querySelector(`[data-adjustment-value="${key}"]`);
+    if (slider && document.activeElement !== slider) slider.value = String(normalized[key]);
+    if (output) output.textContent = normalized[key] > 0 ? `+${normalized[key]}` : String(normalized[key]);
+    if (slider) slider.disabled = !hasImage || disabled;
+  }
+  const reset = container.querySelector('[data-adjustment-action="reset"]');
+  if (reset) reset.disabled = !hasImage || disabled || !hasAdjustmentChanges(normalized);
 }
 
 export function updateEditorTransformUI(container, transform = {}) {
@@ -436,6 +453,52 @@ function createViewportControls(hasImage = false) {
   }
   controls.append(historyToolbar);
 
+  const adjustmentPanel = document.createElement('section');
+  adjustmentPanel.className = 'adjustment-panel';
+  adjustmentPanel.setAttribute('aria-labelledby', 'editor-adjustments-title');
+  adjustmentPanel.setAttribute('aria-describedby', 'editor-adjustments-note');
+  const adjustmentHeader = document.createElement('div');
+  adjustmentHeader.className = 'adjustment-panel-header';
+  const adjustmentTitle = document.createElement('h4');
+  adjustmentTitle.id = 'editor-adjustments-title';
+  adjustmentTitle.textContent = 'Color & tone';
+  const resetAdjustments = createButton({ label: 'Reset', variant: 'secondary', className: 'adjustment-reset-button', disabled: true });
+  resetAdjustments.dataset.adjustmentAction = 'reset';
+  resetAdjustments.title = 'Reset color and tone adjustments';
+  adjustmentHeader.append(adjustmentTitle, resetAdjustments);
+  const adjustmentNote = document.createElement('p');
+  adjustmentNote.className = 'adjustment-panel-note';
+  adjustmentNote.id = 'editor-adjustments-note';
+  adjustmentNote.textContent = '0 is neutral. The original image remains unchanged.';
+  const adjustmentGrid = document.createElement('div');
+  adjustmentGrid.className = 'adjustment-grid';
+  for (const [key, config] of Object.entries(ADJUSTMENT_RANGES)) {
+    const field = document.createElement('label');
+    field.className = 'adjustment-field';
+    const fieldHeader = document.createElement('span');
+    fieldHeader.className = 'adjustment-field-header';
+    const label = document.createElement('span');
+    label.textContent = config.label;
+    const output = document.createElement('output');
+    output.dataset.adjustmentValue = key;
+    output.setAttribute('aria-live', 'polite');
+    output.textContent = '0';
+    fieldHeader.append(label, output);
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = String(config.min);
+    slider.max = String(config.max);
+    slider.step = String(config.step);
+    slider.value = '0';
+    slider.disabled = !hasImage;
+    slider.dataset.adjustment = key;
+    slider.setAttribute('aria-label', config.label);
+    field.append(fieldHeader, slider);
+    adjustmentGrid.append(field);
+  }
+  adjustmentPanel.append(adjustmentHeader, adjustmentNote, adjustmentGrid);
+  controls.append(adjustmentPanel);
+
   const upcoming = document.createElement('div');
   upcoming.className = 'viewport-upcoming-tools';
   const upcomingLabel = document.createElement('p');
@@ -443,7 +506,7 @@ function createViewportControls(hasImage = false) {
   upcomingLabel.textContent = 'UPCOMING EDITING TOOLS';
   const tools = document.createElement('div');
   tools.className = 'tool-placeholder-list';
-  for (const tool of ['Adjust', 'Compare']) {
+  for (const tool of ['Compare']) {
     const item = document.createElement('span');
     item.className = 'tool-placeholder';
     item.textContent = tool;
@@ -589,7 +652,7 @@ export function updateEditorCropUI(container, { hasImage, cropMode, hasCrop, dra
     if (cropBounds) input.max = String(Math.floor(cropBounds[dimension]));
     if (draftCrop && (forceDimensions || document.activeElement !== input)) input.value = String(Math.max(1, Math.round(draftCrop[dimension])));
   }
-  container.querySelectorAll('[data-transform-action], [data-viewport-action], [data-viewport-zoom]').forEach((control) => {
+  container.querySelectorAll('[data-transform-action], [data-viewport-action], [data-viewport-zoom], [data-adjustment], [data-adjustment-action]').forEach((control) => {
     control.disabled = !hasImage || cropMode;
   });
 }
