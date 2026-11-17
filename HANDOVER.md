@@ -53,16 +53,19 @@ Completed:
 6. **Responsive design and theme switching:** added early theme restoration from local storage before stylesheet paint, persistent toggle updates, touch target sizing, and narrow-screen safeguards for panels, dialogs and menus. Reduced-motion styles remain enabled.
 7. **Testing and stabilization:** build and structural validation pass; fixed two production asset path defects (theme initializer omitted from build and manifest/icon precache paths hashed by Vite). Static assets now live under `www/public/`. Runtime responsive, dialog, browser console, offline-cache and packaged Electron checks are still outstanding; do not declare Phase 1 complete until those checks are run.
 
-Phase 2 Tasks 1–5 are implemented; Tasks 2, 3, and 4 are accepted. Task 6 Undo/Redo is implemented and awaiting manual verification. Separately close the carried Phase 1 Task 7 runtime checks: narrow viewport behavior, live service-worker/offline behavior, and packaged Electron validation.
+Phase 2 core Tasks 1–7 are implemented. Tasks 2, 3, and 4 have recorded user acceptance. Tasks 5–7 were implemented with automated validation; manual verification/acceptance should be confirmed with the user. The current version is `0.2.0`.
 
-1. Define an image document that retains the original source and separates working state.
-2. Add validated import for JPG/JPEG, PNG and WebP; report unsupported files and size limits.
-3. Phase 2 Tasks 2–4 are accepted. Phase 2 Task 5 Crop and the joint Tasks 4/5 modernization are implemented and ready for review. Keep future editing operations isolated from the viewport.
-4. Add before/after comparison and safe export to PNG/JPEG/WebP without overwriting source.
-5. Add preview-resolution rendering and full-resolution export path; test large-image memory failures.
-6. Add interaction and integration checks for browser and Electron.
+Next review gates: user verification of crop, history, and export behavior; then close the carried Phase 1 runtime checks for narrow layouts, browser console/dialog/focus, service worker/offline behavior, and packaged Electron. Task 7's coding-agent task explicitly prohibited runtime UI checks, so those results are not claimed here.
 
-Keep UI components thin. Image algorithms belong in `editor/` or `processing/`, not in DOM event handlers. Preserve local-only processing and do not begin model integration until its own phase has approved model/license/runtime details. Current project position: Tasks 4 and 5 are implemented; Task 6 is implemented and awaiting manual verification. No Task 7 export work has started.
+Future roadmap, subject to separate scope and acceptance:
+
+1. Classical adjustments, deterministic filters, and resize, integrated with history and full-resolution export.
+2. Before/after comparison and project/session workflows. Project persistence needs a separate local storage, quota, retention and deletion design.
+3. ID-photo dimensions, positioning guides, and print sheets; jurisdiction presets must cite current authoritative standards and review dates.
+4. Optional on-device upscaling and face detection/restoration, only after model/license/runtime/provider/memory decisions, explicit user-controlled downloads, and identity-safety boundaries.
+5. Production release: browser/PWA offline and recovery validation, packaged Windows Electron validation, large-image failure handling, and later signing/update/distribution decisions.
+
+Keep UI components thin. Image algorithms belong in `editor/` or `processing/`, not in DOM event handlers. Preserve local-only processing. Do not start a future feature or release action without an explicit user task and scope.
 
 ## Phase 2 Task 4 — Rotate & Flip
 
