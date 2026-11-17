@@ -13,10 +13,10 @@ Verified in this workspace on 2026-11-17:
 
 - Workspace: `C:\Users\User\Desktop\nuro-photo-studio-phase-0`.
 - Branch: `main`.
-- `HEAD`: `f80088e20b9c50fd2579737e9d057aa9dd7ab65b` (`Add NasirPintu branding and credits`).
+- `HEAD`: `1ebe74b63ffe5e4a6a820ed872a36c4384046b03` (`Record branding visual approval`).
 - `origin/main` resolves to the same commit. The configured fetch and push remote is `https://github.com/NuroTraders/nuro-photo-studio.git`.
 - `package.json` and the root package entry in `package-lock.json` both report `0.2.0`. Sidebar and About screen strings report `v0.2.0` / `0.2.0`.
-- The branding implementation is committed and pushed. Current tracked changes are limited to updating this handover and memory with the user's visual acceptance. Git also shows two unrelated untracked items: `fold-project-complete.zip` and `public/`. They were not opened, changed, staged, or removed. Treat them as user-owned and do not add them to commits by default.
+- The branding implementation and user's visual approval note are committed and pushed. At the recorded base commit the tracked tree was clean; this project-memory refresh now modifies only this file. At the user's request, the unrelated `fold-project-complete.zip` and root `public/` folder were moved intact to `C:\Users\User\Desktop\Nuro Photo Studio Local Files\`; they are now outside the repository and no longer untracked project items.
 - The last recorded Task 7 checks (run at implementation time, not rerun during this documentation update): `npm test` passed 35/35, `npm run check` passed with 21 required files, `npm run build` passed, and `git diff --check` passed. Vite reports the existing informational notice that static `theme-init.js` cannot be bundled without `type="module"`; Git prints working-copy LF/CRLF notices.
 - No browser, Electron, server, or manual runtime check was performed for Task 7, as explicitly prohibited by that task. Export dialog/download behavior is therefore awaiting user manual verification.
 
@@ -135,7 +135,7 @@ Enhance/Restore, Model Manager, Batch Processing, ID Photo Studio, Print Layout,
 - UI modal uses native `<dialog>` and `showModal`; verify focus trap/return and Escape behavior in runtime checks.
 - Keep filenames sanitized and ensure extensions match selected format. Never overwrite the source file.
 - Task 7 build has the known informational static-script warning. Do not call it a failure unless behavior is broken; preserve the pre-paint `theme-init.js` behavior unless revisiting with a specific reason.
-- Local untracked `fold-project-complete.zip` and `public/` must remain untouched unless the user clarifies ownership and intent.
+- The former local items `fold-project-complete.zip` and `public/` are preserved outside the repository at `C:\Users\User\Desktop\Nuro Photo Studio Local Files\` per user request. Do not move, inspect, or stage them unless asked.
 
 ## 7. Validation and evidence rules
 
@@ -163,4 +163,4 @@ Current Task 7 automated evidence is recorded above and in `HANDOVER.md`; it was
 
 ## 9. Suggested prompt for a new chat
 
-> Read `docs/Nuro_Photo_Studio_Project_Memory_Handover.md`, root `HANDOVER.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/BRANDING.md`, and source relevant to my task. Work only in `NuroTraders/nuro-photo-studio`. Current base is branch `main`, `HEAD`/`origin/main` `f80088e20b9c50fd2579737e9d057aa9dd7ab65b`, version `0.2.0`. Branding is committed/pushed and user visually accepted it from deployed screenshots. Preserve unrelated untracked `fold-project-complete.zip` and root `public/`; do not stage them. Branding uses vanilla JS/CSS, owner-supplied portrait, and shared dialog; do not import React/Lucide or imply AI photo processing. Phase 2 core Tasks 1–7 are implemented; Task 7 still awaits manual review/acceptance. Follow the current task’s testing and authorization limits, preserve source photos, do not add cloud processing, and do not commit/push unless I explicitly ask. Include explicit commit and push commands in implementation reports, but do not execute them without authorization.
+> Read `docs/Nuro_Photo_Studio_Project_Memory_Handover.md`, root `HANDOVER.md`, `README.md`, `docs/ARCHITECTURE.md`, `docs/BRANDING.md`, and source relevant to my task. Work only in `NuroTraders/nuro-photo-studio`. Current base (2026-11-17) is branch `main`, `HEAD`/`origin/main` `1ebe74b63ffe5e4a6a820ed872a36c4384046b03`, version `0.2.0`; the memory update after that commit is uncommitted. The unrelated ZIP and `public/` folder were moved outside the repo to `C:\Users\User\Desktop\Nuro Photo Studio Local Files\`; leave them there unless asked. Branding is committed/pushed and visually accepted by the user from deployed screenshots. Branding uses vanilla JS/CSS, owner-supplied portrait, and shared dialog; do not import React/Lucide or imply AI photo processing. Phase 2 core Tasks 1–7 are implemented; Task 7 still awaits manual review/acceptance. Follow the current task’s testing and authorization limits, preserve source photos, do not add cloud processing, and do not commit/push unless I explicitly ask. Include explicit commit and push commands in implementation reports, but do not execute them without authorization.
